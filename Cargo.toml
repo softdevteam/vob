@@ -1,0 +1,12 @@
+[package]
+name = "vob"
+description = "Vector of Bits with Vec-like API and usize backing storage"
+repository = "https://github.com/softdevteam/vob/"
+version = "0.1.0"
+authors = ["Laurence Tratt <laurie@tratt.net>"]
+readme = "README.md"
+license = "UPL-1.0"
+categories = ["data-structures"]
+
+[dependencies]
+num-traits = "0.1.42"
