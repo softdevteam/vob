@@ -5,7 +5,7 @@ repository = "https://github.com/softdevteam/vob/"
 version = "0.1.0"
 authors = ["Laurence Tratt <laurie@tratt.net>"]
 readme = "README.md"
-license = "UPL-1.0"
+license-file = "LICENSE"
 categories = ["data-structures"]
 
 [dependencies]
