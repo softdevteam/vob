@@ -5,7 +5,7 @@ repository = "https://github.com/softdevteam/vob/"
 version = "0.1.0"
 authors = ["Laurence Tratt <laurie@tratt.net>"]
 readme = "README.md"
-license-file = "LICENSE"
+license = "Apache-2.0 OR MIT OR UPL-1.0"
 categories = ["data-structures"]
 
 [dependencies]
