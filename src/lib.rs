@@ -93,13 +93,13 @@ use range::{Included, Excluded, RangeBounds, Unbounded};
 ///
 /// ## Migrating from `BitVec`
 ///
-/// `Vob` is directly inspired by `BitVec`, but aims to provide an interface more closely aligned
-/// to `Vec<bool>` Several functions in `BitVec` have different names in `Vob`, but porting is in
-/// general fairly simple. The main semantic difference is that `Vob`s
-/// [`clear()`](struct.Vob.html#method.clear) function empties the `Vob` of contents (i.e. sets its
-/// length to 0), whereas `BitVec`'s function of the same name unsets all bits (keeping the length
-/// unchanged). The same effect as `BitVec`'s `clear` can be achieved by using `Vob`'s
-/// [`set_all(false)`](struct.Vob.html#method.set_all) function.
+/// `Vob` is directly inspired by the [`BitVec`](https://crates.io/crates/bit-vec), but aims to
+/// provide an interface more closely aligned to `Vec<bool>` Several functions in `BitVec` have
+/// different names in `Vob`, but porting is in general fairly simple. The main semantic difference
+/// is that `Vob`s [`clear()`](struct.Vob.html#method.clear) function empties the `Vob` of contents
+/// (i.e. sets its length to 0), whereas `BitVec`'s function of the same name unsets all bits
+/// (keeping the length unchanged). The same effect as `BitVec`'s `clear` can be achieved by using
+/// `Vob`'s [`set_all(false)`](struct.Vob.html#method.set_all) function.
 #[derive(Clone)]
 pub struct Vob<T=usize> {
     /// How many bits are stored in this Vob?
@@ -423,7 +423,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         Range{start, end}
     }
 
-    /// Returns an iterator which produces the index of each set bit in the specified range.
+    /// Returns an iterator which efficiently produces the index of each set bit in the specified
+    /// range. Assuming appropriate support from your CPU, this is much more efficient than
+    /// checking each bit individually.
     ///
     /// # Examples
     /// ```
@@ -444,7 +446,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         }
     }
 
-    /// Returns an iterator which produces the index of each unset bit in the specified range.
+    /// Returns an iterator which efficiently produces the index of each unset bit in the specified
+    /// range. Assuming appropriate support from your CPU, this is much more efficient than
+    /// checking each bit individually.
     ///
     /// # Examples
     /// ```
