@@ -37,7 +37,7 @@
 
 extern crate num_traits;
 
-use std::cmp::PartialEq;
+use std::cmp::{min, PartialEq};
 use std::fmt;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
@@ -48,6 +48,11 @@ use std::slice;
 
 use num_traits::{PrimInt, One, Zero};
 
+// Whilst we wait for https://github.com/rust-lang/rust/issues/30877 to become stable, we can't use
+// RangeBounds and friends. We therefore have to implement a subset of the expected functionality
+// ourselves.
+mod range;
+use range::{Included, Excluded, RangeBounds, Unbounded};
 
 /// A Vob is a "vector of bits": a sequence of bits which exposes a `Vec`-like interface. Whereas
 /// `Vec<bool>` requires 1 byte of storage per bit, `Vob` requires only 1 bit of storage per bit.
@@ -76,7 +81,7 @@ use num_traits::{PrimInt, One, Zero};
 /// v2.set(67, true);
 /// v1.set(188, true);
 /// v1.and(&v2);
-/// let num_bits_set = v1.iter_set_bits().count();
+/// let num_bits_set = v1.iter_set_bits(..).count();
 /// assert_eq!(num_bits_set, 1);
 /// ```
 ///
@@ -424,8 +429,24 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         }
     }
 
+    /// Convert a `RangeBounds` into a `Range`, taking into account this `Vob`'s length.
+    fn process_range<R>(&self, range: R) -> Range<usize>
+        where R: RangeBounds<usize>
+    {
+        let start = match range.start() {
+            Included(t) => min(*t, self.len),
+            Excluded(t) => min(*t + 1, self.len),
+            Unbounded => 0
+        };
+        let end = match range.end() {
+            Included(t) => min(*t + 1, self.len()),
+            Excluded(t) => min(*t, self.len()),
+            Unbounded => self.len
+        };
+        Range{start, end}
+    }
 
-    /// Returns an iterator which produces the index of each bit set in the Vob.
+    /// Returns an iterator which produces the index of each set bit in the specified range.
     ///
     /// # Examples
     /// ```
@@ -433,18 +454,20 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// let mut v = Vob::new();
     /// v.push(false);
     /// v.push(true);
-    /// let mut iterator = v.iter_set_bits();
+    /// let mut iterator = v.iter_set_bits(..);
     /// assert_eq!(iterator.next(), Some(1));
     /// assert_eq!(iterator.next(), None);
     /// ```
-    pub fn iter_set_bits(&self) -> IterSetBits<T> {
+    pub fn iter_set_bits<R>(&self, range: R) -> IterSetBits<T>
+        where R: RangeBounds<usize>
+    {
         IterSetBits {
             vob: self,
-            range: 0..self.len
+            range: self.process_range(range)
         }
     }
 
-    /// Returns an iterator which produces the index of each bit set in the Vob.
+    /// Returns an iterator which produces the index of each unset bit in the specified range.
     ///
     /// # Examples
     /// ```
@@ -452,14 +475,16 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// let mut v = Vob::new();
     /// v.push(false);
     /// v.push(true);
-    /// let mut iterator = v.iter_unset_bits();
+    /// let mut iterator = v.iter_unset_bits(..);
     /// assert_eq!(iterator.next(), Some(0));
     /// assert_eq!(iterator.next(), None);
     /// ```
-    pub fn iter_unset_bits(&self) -> IterUnsetBits<T> {
+    pub fn iter_unset_bits<R>(&self, range: R) -> IterUnsetBits<T>
+        where R: RangeBounds<usize>
+    {
         IterUnsetBits {
             vob: self,
-            range: 0..self.len
+            range: self.process_range(range)
         }
     }
 
@@ -823,9 +848,10 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterSetBits<'a, T> {
     type Item = usize;
 
     fn next(&mut self) -> Option<usize> {
+        debug_assert!(self.range.end <= self.vob.len);
         if let Some(mut i) = self.range.next() {
             // Bear in mind that i might not be aligned.
-            for b in block_offset::<T>(i) .. blocks_required::<T>(self.vob.len) {
+            for b in block_offset::<T>(i) .. blocks_required::<T>(self.range.end) {
                 let v = self.vob.vec[b];
                 if v != T::zero() {
                     // We have a block with a bit set. Find the next bit set after 'i %
@@ -837,7 +863,11 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterSetBits<'a, T> {
                         // There is another bit set after i in the block.
                         let bs = b * bits_per_block::<T>() + i_off + tz;
                         self.range.start = bs + 1;
-                        return Some(bs);
+                        if bs >= self.range.end {
+                            return None;
+                        } else {
+                            return Some(bs);
+                        }
                     }
                 }
                 i = b * bits_per_block::<T>();
@@ -862,9 +892,10 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterUnsetBits<'a, T> {
     type Item = usize;
 
     fn next(&mut self) -> Option<usize> {
+        debug_assert!(self.range.end <= self.vob.len);
         if let Some(mut i) = self.range.next() {
             // Bear in mind that i might not be aligned.
-            for b in block_offset::<T>(i) .. blocks_required::<T>(self.vob.len) {
+            for b in block_offset::<T>(i) .. blocks_required::<T>(self.range.end) {
                 let v = self.vob.vec[b];
                 if v != T::max_value() {
                     // We have a block with a bit unset. Find the next bit unset after 'i %
@@ -876,9 +907,9 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterUnsetBits<'a, T> {
                         // There is another bit unset after i in the block.
                         let bs = b * bits_per_block::<T>() + i_off + tz;
                         self.range.start = bs + 1;
-                        if bs >= self.vob.len {
-                            // This is the last block and the unset bit we thought we'd found is
-                            // actually an unused bit; we've thus reached the end of the Vob.
+                        if bs >= self.range.end {
+                            // The unset bit is after the range we're looking for, so we've reached
+                            // the end of the iterator.
                             break;
                         }
                         return Some(bs);
@@ -1166,7 +1197,7 @@ mod tests {
     #[test]
     fn test_iter_set_bits() {
         let mut v1 = vob![false, true, false, true];
-        assert_eq!(v1.iter_set_bits().collect::<Vec<usize>>(), vec![1, 3]);
+        assert_eq!(v1.iter_set_bits(..).collect::<Vec<usize>>(), vec![1, 3]);
         v1.resize(127, false);
         v1.push(true);
         v1.push(false);
@@ -1174,13 +1205,17 @@ mod tests {
         v1.push(true);
         v1.resize(256, false);
         v1.push(true);
-        assert_eq!(v1.iter_set_bits().collect::<Vec<usize>>(), vec![1, 3, 127, 129, 130, 256]);
+        assert_eq!(v1.iter_set_bits(..).collect::<Vec<usize>>(), vec![1, 3, 127, 129, 130, 256]);
+        assert_eq!(v1.iter_set_bits(2..256).collect::<Vec<usize>>(), vec![3, 127, 129, 130]);
+        assert_eq!(v1.iter_set_bits(2..).collect::<Vec<usize>>(), vec![3, 127, 129, 130, 256]);
+        assert_eq!(v1.iter_set_bits(..3).collect::<Vec<usize>>(), vec![1]);
     }
 
     #[test]
     fn test_iter_unset_bits() {
         let mut v1 = vob![false, true, false, false];
-        assert_eq!(v1.iter_unset_bits().collect::<Vec<usize>>(), vec![0, 2, 3]);
+        assert_eq!(v1.iter_unset_bits(..).collect::<Vec<usize>>(), vec![0, 2, 3]);
+        assert_eq!(v1.iter_unset_bits(..10).collect::<Vec<usize>>(), vec![0, 2, 3]);
         v1.resize(127, true);
         v1.push(false);
         v1.push(true);
@@ -1188,7 +1223,8 @@ mod tests {
         v1.push(false);
         v1.resize(256, true);
         v1.push(false);
-        assert_eq!(v1.iter_unset_bits().collect::<Vec<usize>>(), vec![0, 2, 3, 127, 129, 130, 256]);
+        assert_eq!(v1.iter_unset_bits(..).collect::<Vec<usize>>(), vec![0, 2, 3, 127, 129, 130, 256]);
+        assert_eq!(v1.iter_unset_bits(3..256).collect::<Vec<usize>>(), vec![3, 127, 129, 130]);
     }
 
     #[test]
