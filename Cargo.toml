@@ -9,4 +9,4 @@ license = "Apache-2.0 OR MIT OR UPL-1.0"
 categories = ["data-structures"]
 
 [dependencies]
-num-traits = "0.1.42"
+num-traits = "0.2.1"
