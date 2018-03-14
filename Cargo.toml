@@ -5,7 +5,9 @@ repository = "https://github.com/softdevteam/vob/"
 version = "1.0.0"
 authors = ["Laurence Tratt <laurie@tratt.net>"]
 readme = "README.md"
-license = "Apache-2.0 OR MIT OR UPL-1.0"
+# This should be "Apache-2.0 OR MIT OR UPL-1.0" but crates.io doesn't know about
+# UPL-1.0.
+license = "Apache-2.0 OR MIT"
 categories = ["data-structures"]
 
 [dependencies]
