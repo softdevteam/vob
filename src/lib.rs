@@ -1,34 +1,11 @@
-// Copyright (c) 2018 King's College London
-// created by the Software Development Team <http://soft-dev.org/>
+// Copyright (c) 2018 King's College London created by the Software Development Team
+// <http://soft-dev.org/>
 //
-// The Universal Permissive License (UPL), Version 1.0
-//
-// Subject to the condition set forth below, permission is hereby granted to any person obtaining a
-// copy of this software, associated documentation and/or data (collectively the "Software"), free
-// of charge and under any and all copyright rights in the Software, and any and all patent rights
-// owned or freely licensable by each licensor hereunder covering either (i) the unmodified
-// Software as contributed to or provided by such licensor, or (ii) the Larger Works (as defined
-// below), to deal in both
-//
-// (a) the Software, and
-// (b) any piece of software and/or hardware listed in the lrgrwrks.txt file
-// if one is included with the Software (each a "Larger Work" to which the Software is contributed
-// by such licensors),
-//
-// without restriction, including without limitation the rights to copy, create derivative works
-// of, display, perform, and distribute the Software and make, use, sell, offer for sale, import,
-// export, have made, and have sold the Software and the Larger Work(s), and to sublicense the
-// foregoing rights on either these or other terms.
-//
-// This license is subject to the following condition: The above copyright notice and either this
-// complete permission notice or at a minimum a reference to the UPL must be included in all copies
-// or substantial portions of the Software.
-//
-// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING
-// BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-// NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM,
-// DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+// Licensed under the Apache License, Version 2.0 <LICENSE-APACHE or
+// http://www.apache.org/licenses/LICENSE-2.0>, or the MIT license <LICENSE-MIT or
+// http://opensource.org/licenses/MIT>, or the UPL-1.0 license <http://opensource.org/licenses/UPL>
+// at your option. This file may not be copied, modified, or distributed except according to those
+// terms.
 
 //! A vector of bits ("Vob") is a sequence of bits which exposes a `Vec`-like interface. Whereas
 //! `Vec<bool>` requires 1 byte of storage per bit, `Vob` requires only 1 bit of storage per bit.
@@ -116,13 +93,13 @@ use range::{Included, Excluded, RangeBounds, Unbounded};
 ///
 /// ## Migrating from `BitVec`
 ///
-/// `Vob` is directly inspired by `BitVec`, but aims to provide an interface more closely aligned
-/// to `Vec<bool>` Several functions in `BitVec` have different names in `Vob`, but porting is in
-/// general fairly simple. The main semantic difference is that `Vob`s
-/// [`clear()`](struct.Vob.html#method.clear) function empties the `Vob` of contents (i.e. sets its
-/// length to 0), whereas `BitVec`'s function of the same name unsets all bits (keeping the length
-/// unchanged). The same effect as `BitVec`'s `clear` can be achieved by using `Vob`'s
-/// [`set_all(false)`](struct.Vob.html#method.set_all) function.
+/// `Vob` is directly inspired by the [`BitVec`](https://crates.io/crates/bit-vec), but aims to
+/// provide an interface more closely aligned to `Vec<bool>` Several functions in `BitVec` have
+/// different names in `Vob`, but porting is in general fairly simple. The main semantic difference
+/// is that `Vob`s [`clear()`](struct.Vob.html#method.clear) function empties the `Vob` of contents
+/// (i.e. sets its length to 0), whereas `BitVec`'s function of the same name unsets all bits
+/// (keeping the length unchanged). The same effect as `BitVec`'s `clear` can be achieved by using
+/// `Vob`'s [`set_all(false)`](struct.Vob.html#method.set_all) function.
 #[derive(Clone)]
 pub struct Vob<T=usize> {
     /// How many bits are stored in this Vob?
@@ -446,7 +423,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         Range{start, end}
     }
 
-    /// Returns an iterator which produces the index of each set bit in the specified range.
+    /// Returns an iterator which efficiently produces the index of each set bit in the specified
+    /// range. Assuming appropriate support from your CPU, this is much more efficient than
+    /// checking each bit individually.
     ///
     /// # Examples
     /// ```
@@ -467,7 +446,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         }
     }
 
-    /// Returns an iterator which produces the index of each unset bit in the specified range.
+    /// Returns an iterator which efficiently produces the index of each unset bit in the specified
+    /// range. Assuming appropriate support from your CPU, this is much more efficient than
+    /// checking each bit individually.
     ///
     /// # Examples
     /// ```
