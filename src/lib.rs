@@ -13,6 +13,9 @@
 //! The main documentation for this crate can be found in the [`Vob`](struct.Vob.html) struct.
 
 extern crate num_traits;
+#[cfg(feature = "serde")]
+#[macro_use]
+extern crate serde;
 
 use std::cmp::{min, PartialEq};
 use std::fmt;
@@ -101,6 +104,7 @@ use range::{Included, Excluded, RangeBounds, Unbounded};
 /// (keeping the length unchanged). The same effect as `BitVec`'s `clear` can be achieved by using
 /// `Vob`'s [`set_all(false)`](struct.Vob.html#method.set_all) function.
 #[derive(Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Vob<T=usize> {
     /// How many bits are stored in this Vob?
     len: usize,
