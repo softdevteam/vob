@@ -138,7 +138,7 @@ impl Vob<usize> {
         }
     }
 
-    /// Creates a BitVec that holds `len` elements, setting each element to `value`.
+    /// Creates a Vob that holds `len` elements, setting each element to `value`.
     ///
     /// # Examples
     /// ```
@@ -154,6 +154,49 @@ impl Vob<usize> {
         }
         v.len = len;
         v.mask_last_block();
+        v
+    }
+
+    /// Create a Vob from a `u8` slice. The most significant bit of each byte comes first in the
+    /// resulting Vob.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// #[macro_use] extern crate vob;
+    /// use vob::Vob;
+    /// fn main() {
+    ///     let v = Vob::from_bytes(&[0b10100000, 0b00010010]);
+    ///     assert_eq!(v, vob![true, false, true, false, false, false, false, false,
+    ///                        false, false, false, true, false, false, true, false]);
+    /// }
+    /// ```
+    pub fn from_bytes(slice: &[u8]) -> Vob<usize> {
+        let mut v = Vob::with_capacity(slice.len()
+                                            .checked_mul(8)
+                                            .expect("Overflow detected"));
+        for i in 0..blocks_required::<usize>(slice.len() * 8) {
+            let mut w = usize::zero();
+            for j in 0..bytes_per_block::<usize>() {
+                let off = i * bytes_per_block::<usize>() + j;
+                if off >= slice.len() {
+                    // If slice doesn't contain a whole number of words, we'll end up with one
+                    // block at the end with "missing" bytes; since these are equivalent to 0, we
+                    // can simply ignore the fact they're missing.
+                    continue;
+                }
+                let b = slice[off];
+                if b != 0 {
+                    let mut rb: u8 = 0; // the byte b with its bits in reverse order
+                    for k in 0..8 {
+                        rb |= ((b >> k) & 1) << (8 - k - 1);
+                    }
+                    w |= (rb as usize) << (j * 8);
+                }
+            }
+            v.vec.push(w);
+        }
+        v.len = slice.len() * 8;
         v
     }
 }
@@ -766,7 +809,6 @@ impl FromIterator<bool> for Vob<usize> {
     }
 }
 
-
 // This is based on the `BitVec` approach to indices. It's clearly a horrible way of doing things,
 // but until `IndexGet` is implemented, we're stuck.
 static TRUE: bool = true;
@@ -952,7 +994,12 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for StorageIter<'a, T> {
 
 /// How many bits are stored in each underlying storage block?
 fn bits_per_block<T>() -> usize {
-    size_of::<T>() * 8
+    bytes_per_block::<T>() * 8
+}
+
+/// How many bytes are stored in each underlying storage block?
+fn bytes_per_block<T>() -> usize {
+    size_of::<T>()
 }
 
 /// Return the offset in the vector of the storage block storing the bit `off`.
@@ -1093,6 +1140,30 @@ mod tests {
         assert_eq!(v.set(size_of::<usize>() * 8, true), Some(false));
         assert_eq!(v.get(size_of::<usize>() * 8 - 1), Some(true));
         assert_eq!(v.get(size_of::<usize>() * 8 - 2), Some(true));
+    }
+
+
+    #[test]
+    fn test_from_bytes() {
+        let v = Vob::from_bytes(&[]);
+        assert_eq!(v, vob![]);
+
+        // Example adopted from BitVec
+        let v = Vob::from_bytes(&[0b10100000, 0b00010010]);
+        assert_eq!(v, vob![true, false, true, false, false, false, false, false,
+                           false, false, false, true, false, false, true, false]);
+
+        // On a 64-bit machine, make sure we test that a complete word is dealt with correctly.
+        let v = Vob::from_bytes(&[0b10100000, 0b00010010, 0b00110101, 0b11001010,
+                                  0b00110001, 0b10010101, 0b01111100, 0b01010001]);
+        assert_eq!(v, vob![true, false, true, false, false, false, false, false,
+                           false, false, false, true, false, false, true, false,
+                           false, false, true, true, false, true, false, true,
+                           true, true, false, false, true, false, true, false,
+                           false, false, true, true, false, false, false, true,
+                           true, false, false, true, false, true, false, true,
+                           false, true, true, true, true, true, false, false,
+                           false, true, false, true, false, false, false, true]);
     }
 
     #[test]
