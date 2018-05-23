@@ -804,9 +804,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         chngd
     }
 
-    /// We guarantee that the last storage block has no bits set past the "last" bit: this function
-    /// clears any such bits.
-    fn mask_last_block(&mut self) {
+    // contents for the feature-guarded implementations next.
+    #[inline]
+    fn _mask_last_block(&mut self) {
         let ub = self.len % bits_per_block::<T>();
         // If there are no unused bits, there's no need to perform masking.
         if ub > 0 {
@@ -818,6 +818,88 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
                 self.vec[off] = new_v;
             }
         }
+    }
+
+    /// We guarantee that the last storage block has no bits set past the "last" bit: this function
+    /// clears any such bits.
+    #[cfg(not(feature = "unsafe_internals"))]
+    // see also the public implementation next.
+    fn mask_last_block(&mut self) {
+        self._mask_last_block()
+    }
+
+    /// We guarantee that the last storage block has no bits set past the "last" bit: this function
+    /// clears any such bits.
+    ///
+    /// This otherwise private function is exposed when `unsafe_internals` is enabled, to help
+    /// callers maintain the internal assumptions.
+    #[cfg(feature = "unsafe_internals")]
+    pub fn mask_last_block(&mut self) {
+        self._mask_last_block()
+    }
+}
+
+#[cfg(feature = "unsafe_internals")]
+impl<T> Vob<T> {
+    /// Get a mutable reference to the underlying data structure
+    ///
+    /// This is marked as unsafe as it allows to invalidate the assumptions made by this module.
+    /// It is not in itself unsafe.
+    ///
+    /// # Assumptions:
+    ///
+    /// * `Vob` stores the bits in a little-endian order.
+    /// * The length can't change, or should be updated using `Vob::set_len()`.
+    /// * Any bits past `self.len()` should be set to 0 in the last block.
+    ///   `Vob::mask_last_block()` can help you with that.
+    /// * `storage.len()` may not be larger than `ceil(self.len() / (8 * size_of::<T>))`
+    ///
+    /// # Examples
+    /// ```
+    /// #[macro_use] extern crate vob;
+    /// fn main() {
+    ///     let mut v1 = vob![true, false, true];
+    ///     let storage = unsafe { v1.get_storage_mut() };
+    ///     assert_eq!(storage[0], 0b101);
+    /// }
+    /// ```
+    #[cfg(feature = "unsafe_internals")]
+    pub unsafe fn get_storage_mut(&mut self) -> &mut Vec<T> {
+        &mut self.vec
+    }
+
+    /// Set the length of the `Vob`.
+    ///
+    /// This will explicitly set the length of the Vob,
+    /// without actually modifying the underlying data structure
+    /// or doing any checks.
+    ///
+    /// If you want to shorten your `Vob`, you're probably looking
+    /// for `truncate`.
+    ///
+    /// See `Vob::get_storage_mut()` for the other requirements.
+    ///
+    /// # Examples
+    /// ```
+    /// #[macro_use] extern crate vob;
+    /// use vob::Vob;
+    /// fn main() {
+    ///     let mut v1 = Vob::<u8>::new_with_storage_type(9);
+    ///     v1.push(true);
+    ///     v1.push(false);
+    ///     {
+    ///         let mut storage = unsafe { v1.get_storage_mut() };
+    ///         storage.push(0b1);
+    ///     }
+    ///     unsafe { v1.set_len(9); }
+    ///     assert_eq!(v1[0], true);
+    ///     assert_eq!(v1[1], false);
+    ///     assert_eq!(v1[2], false);
+    ///     assert_eq!(v1[8], true);
+    /// }
+    /// ```
+    pub unsafe fn set_len(&mut self, len: usize) {
+        self.len = len;
     }
 }
 
@@ -1409,5 +1491,17 @@ mod tests {
             assert_eq!(a_copy, a);
             assert_eq!(a_copy.vec, a.vec);
         }
+    }
+
+    #[test]
+    #[cfg(feature = "unsafe_internals")]
+    fn test_storage_mut() {
+        let mut v1 = vob![true, false, true];
+        {
+            let storage = unsafe { v1.get_storage_mut() };
+            assert_eq!(storage[0], 0b101);
+            storage[0] = 0b111;
+        }
+        assert_eq!(v1.get(1), Some(true));
     }
 }
