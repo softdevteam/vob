@@ -457,12 +457,12 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     fn process_range<R>(&self, range: R) -> Range<usize>
         where R: RangeBounds<usize>
     {
-        let start = match range.start() {
+        let start = match range.start_bound() {
             Included(t) => min(*t, self.len),
             Excluded(t) => min(*t + 1, self.len),
             Unbounded => 0
         };
-        let end = match range.end() {
+        let end = match range.end_bound() {
             Included(t) => min(*t + 1, self.len()),
             Excluded(t) => min(*t, self.len()),
             Unbounded => self.len
