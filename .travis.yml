@@ -1,13 +1,11 @@
 language: rust
 
-matrix:
-  include:
-    - rust: nightly
-      env: FEATURES=unsafe_internals
-    - rust: nightly
-      env: FEATURES=''
-    - rust: stable
-    - rust: beta
+rust:
+  - stable
+  - nightly
+env:
+  - FEATURES=''
+  - FEATURES='unsafe_internals'
 
 before_script:
   - rustup component add rustfmt-preview

@@ -101,3 +101,12 @@ fn and(bench: &mut Bencher) {
         a.and(&b);
     });
 }
+
+#[bench]
+fn from_bytes(b: &mut Bencher) {
+    let mut rng = rand::thread_rng();
+    let mut source = [0u8; 1024];
+    rng.fill(&mut source);
+
+    b.iter(|| Vob::from_bytes(&source));
+}
