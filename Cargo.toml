@@ -13,3 +13,6 @@ categories = ["data-structures"]
 [dependencies]
 num-traits = "0.2.1"
 serde = { version="1.0", features=["derive"], optional=true }
+
+[dev-dependencies]
+rand = "0.5"

@@ -16,6 +16,8 @@ extern crate num_traits;
 #[cfg(feature = "serde")]
 #[macro_use]
 extern crate serde;
+#[cfg(test)]
+extern crate rand;
 
 use std::cmp::{min, PartialEq};
 use std::fmt;
@@ -590,6 +592,64 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         }
     }
 
+    /// Append all elements from a second Vob to this Vob.
+    ///
+    /// Use this instead of `extend()` when extending with a Vob, because this method is a lot
+    /// faster.
+    ///
+    /// # Examples
+    /// ```
+    /// #[macro_use] extern crate vob;
+    /// fn main() {
+    ///     let mut v1 = vob![true];
+    ///     let v2 = vob![false, false];
+    ///     v1.extend_from_vob(&v2);
+    ///     assert_eq!(v1, vob![true, false, false]);
+    /// }
+    /// ```
+    pub fn extend_from_vob(&mut self, other: &Vob<T>) {
+        self.reserve(other.len());
+        // used bits in last block
+        let ub = self.len % bits_per_block::<T>();
+        if ub == 0 {
+            // If there are no unused bits, we can just push the new blocks
+            self.vec.extend(other.vec.clone());
+        } else {
+            // We need to do things very carefully here. We need to shift each block ub to the
+            // left. We use rotate to move those bits to the bottom part of the integer. Then we
+            // add the bytes to the last block of this one.
+            //
+            // We're relying on the bit ordering here. We're also relying on the last bits to be 0.
+
+            // this mask has the last ub bits set
+            let msk = (T::one() << ub) - T::one();
+
+            for block in &other.vec {
+                // rotate block to the left
+                let new_block: T = block.rotate_left(ub as u32);
+                {
+                    let last = self.vec.last_mut().unwrap();
+                    debug_assert_eq!(*last & !msk, T::zero(), "the last bits in the last block weren't 0");
+                    // add the last (upper) bits of new_block
+                    // ex: ub=4; 0000101 | 1110111 & !(0001111)
+                    //   =>      0000101 | 1110000 => 1110101
+                    *last = *last | new_block & !msk;
+                }
+                // add the last block with the lower (first) bits set
+                self.vec.push(new_block & msk);
+            }
+        }
+
+        let new_len = self.len
+            .checked_add(other.len())
+            .expect("Overflow detected");
+        // We need to truncate because we always push the last block from other even if it's empty.
+        self.vec.truncate(blocks_required::<T>(new_len));
+        self.len = new_len;
+
+        self.mask_last_block();
+    }
+
     /// Clears the Vob, removing all values.
     ///
     /// Note that this method has no effect on the allocated capacity of the Vob.
@@ -1054,11 +1114,13 @@ macro_rules! vob {
 
 #[cfg(test)]
 mod tests {
+    use super::{block_offset, blocks_required, Vob};
+    use rand;
+    use rand::Rng;
     use std::collections::hash_map::DefaultHasher;
     use std::hash::{Hash, Hasher};
     use std::iter::FromIterator;
     use std::mem::size_of;
-    use super::{block_offset, blocks_required, Vob};
 
     #[test]
     fn test_block_offset() {
@@ -1141,7 +1203,6 @@ mod tests {
         assert_eq!(v.get(size_of::<usize>() * 8 - 1), Some(true));
         assert_eq!(v.get(size_of::<usize>() * 8 - 2), Some(true));
     }
-
 
     #[test]
     fn test_from_bytes() {
@@ -1319,5 +1380,30 @@ mod tests {
         v2.set(1, true);
         assert_eq!(v2, vob![2; true]);
         assert_ne!(v2, vob![2; false]);
+    }
+
+    fn random_vob(len: usize) -> Vob {
+        let mut rng = rand::thread_rng();
+        let mut vob = Vob::with_capacity(len);
+        for _ in 0..len {
+            vob.push(rng.gen());
+        }
+        vob
+    }
+
+    #[test]
+    fn test_extend_from_vob() {
+        let mut rng = rand::thread_rng();
+        for _ in 0..20 {
+            let len: u8 = rng.gen();
+            let mut a = random_vob(len as usize);
+            let mut a_copy = a.clone();
+            let len: u8 = rng.gen();
+            let b = random_vob(len as usize);
+            a.extend_from_vob(&b);
+            a_copy.extend(b.iter());
+            assert_eq!(a_copy, a);
+            assert_eq!(a_copy.vec, a.vec);
+        }
     }
 }
