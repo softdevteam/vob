@@ -247,16 +247,16 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// assert!(v.capacity() >= 1);
     /// ```
     pub fn reserve(&mut self, additional: usize) {
-        // Repeatedly calling this will over-reserve, since we only record how many bits we've
-        // used, not how many bits of capacity the user thinks we have. For example, repeatedly
-        // asking for storage for one extra bit will repeatedly add a whole extra machine word.
-        // Fixing this would require an extra machine word in the Vob struct, which hardly seems
-        // worth it for an unlikely, and probably silly, use case.
-        let cap = self.vec.capacity()
-                          .checked_mul(bits_per_block::<T>())
-                          .and_then(|x| x.checked_add(additional))
-                          .expect("Overflow detected");
-        self.vec.reserve(blocks_required::<T>(cap));
+        let unused_bits: usize = self.capacity() - self.len();
+        if additional > unused_bits {
+            // Will never overflow because additional > current
+            let needed_extra_bits = additional - unused_bits;
+            // still need to check if we won't overflow the capacity() computation
+            self.capacity()
+                .checked_add(needed_extra_bits)
+                .expect("Overflow detected");
+            self.vec.reserve(blocks_required::<T>(needed_extra_bits));
+        }
     }
 
     /// Shrinks the capacity of the vector as much as possible.
@@ -1172,6 +1172,9 @@ mod tests {
         let mut v = Vob::new();
         v.reserve(10);
         assert_eq!(v.capacity(), size_of::<usize>() * 8);
+        v.reserve(10);
+        assert_eq!(v.capacity(), size_of::<usize>() * 8, "over-reserved");
+        v.push(true); // make sure there's less space than 64 still available
         v.reserve(size_of::<usize>() * 8);
         assert_eq!(v.capacity(), size_of::<usize>() * 8 * 2);
     }
@@ -1180,7 +1183,8 @@ mod tests {
     #[should_panic(expected = "Overflow detected")]
     fn test_reserve_panic() {
         let mut v = Vob::new();
-        v.reserve(5);
+        v.push(true);
+        v.push(true);
         v.reserve(usize::max_value());
     }
 
