@@ -49,3 +49,14 @@ fn extend_vob_not_aligned(b: &mut Bencher) {
         vector.extend_from_vob(&source)
     });
 }
+
+#[bench]
+fn split_off(b: &mut Bencher) {
+    let mut source = Vob::with_capacity(N);
+    source.extend((0..N).map(|i| i % 2 == 0));
+
+    b.iter(|| {
+        let mut a = source.clone();
+        a.split_off(N / 2)
+    });
+}
