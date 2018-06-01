@@ -12,46 +12,46 @@ use std::ops::{RangeFull, Range, RangeTo, RangeFrom};
 pub use std::collections::Bound::{self, Excluded, Included, Unbounded};
 
 pub trait RangeBounds<T: ?Sized> {
-    fn start(&self) -> Bound<&T>;
-    fn end(&self) -> Bound<&T>;
+    fn start_bound(&self) -> Bound<&T>;
+    fn end_bound(&self) -> Bound<&T>;
 }
 
 impl<T: ?Sized> RangeBounds<T> for RangeFull {
-    fn start(&self) -> Bound<&T> {
+    fn start_bound(&self) -> Bound<&T> {
         Unbounded
     }
 
-    fn end(&self) -> Bound<&T> {
+    fn end_bound(&self) -> Bound<&T> {
         Unbounded
     }
 }
 
 impl<T> RangeBounds<T> for RangeFrom<T> {
-    fn start(&self) -> Bound<&T> {
+    fn start_bound(&self) -> Bound<&T> {
         Included(&self.start)
     }
 
-    fn end(&self) -> Bound<&T> {
+    fn end_bound(&self) -> Bound<&T> {
         Unbounded
     }
 }
 
 impl<T> RangeBounds<T> for RangeTo<T> {
-    fn start(&self) -> Bound<&T> {
+    fn start_bound(&self) -> Bound<&T> {
         Unbounded
     }
 
-    fn end(&self) -> Bound<&T> {
+    fn end_bound(&self) -> Bound<&T> {
         Excluded(&self.end)
     }
 }
 
 impl<T> RangeBounds<T> for Range<T> {
-    fn start(&self) -> Bound<&T> {
+    fn start_bound(&self) -> Bound<&T> {
         Included(&self.start)
     }
 
-    fn end(&self) -> Bound<&T> {
+    fn end_bound(&self) -> Bound<&T> {
         Excluded(&self.end)
     }
 }
