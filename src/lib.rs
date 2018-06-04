@@ -306,6 +306,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// assert_eq!(v.get(1), Some(false));
     /// ```
     pub fn push(&mut self, value: bool) {
+        debug_assert_eq!(self.vec.len(), blocks_required::<T>(self.len));
         if self.len % bits_per_block::<T>() == 0 {
             self.vec.push(T::zero());
         }
@@ -331,8 +332,8 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         // The subtraction can't underflow because self.len > 0.
         let v = self.get(self.len - 1);
         debug_assert!(v.is_some());
-        self.len -= 1;
-        self.mask_last_block();
+        let new_len = self.len - 1;
+        self.truncate(new_len);
         v
     }
 
@@ -1503,5 +1504,31 @@ mod tests {
             storage[0] = 0b111;
         }
         assert_eq!(v1.get(1), Some(true));
+    }
+
+    #[test]
+    fn test_split_off() {
+        for len_a in 0..128 {
+            for len_b in 0..128 {
+                let a = random_vob(len_a as usize);
+                let b = random_vob(len_b as usize);
+                let mut joined = a.clone();
+                joined.extend_from_vob(&b);
+                assert_eq!(joined.len(), len_a + len_b);
+                let b_ = joined.split_off(len_a as usize);
+                assert_eq!(a, joined, "lower part for {}, {}", len_a, len_b);
+                assert_eq!(b, b_, "upper part for {}, {}", len_a, len_b);
+            }
+        }
+    }
+
+    #[test]
+    fn push_adjusts_vec_correctly() {
+        let mut v = Vob::new();
+        v.push(false);
+        assert_eq!(v.vec.len(), 1);
+        v.pop();
+        v.push(true);
+        assert_eq!(v.vec.len(), 1);
     }
 }
