@@ -1,2 +1,14 @@
 language: rust
-rust: stable
+
+matrix:
+  include:
+    - rust: nightly
+      env: FEATURES=unsafe_internals
+    - rust: nightly
+      env: FEATURES=''
+    - rust: stable
+    - rust: beta
+
+script:
+  - cargo build --features "$FEATURES"
+  - "[ \"$TRAVIS_RUST_VERSION\" != 'nightly' ] ||  cargo bench --features \"$FEATURES\""
