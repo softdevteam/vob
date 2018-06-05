@@ -28,13 +28,13 @@ use std::mem::{replace, size_of};
 use std::ops::{Index, Range};
 use std::slice;
 
-use num_traits::{PrimInt, One, Zero};
+use num_traits::{One, PrimInt, Zero};
 
 // Whilst we wait for https://github.com/rust-lang/rust/issues/30877 to become stable, we can't use
 // RangeBounds and friends. We therefore have to implement a subset of the expected functionality
 // ourselves.
 mod range;
-use range::{Included, Excluded, RangeBounds, Unbounded};
+use range::{Excluded, Included, RangeBounds, Unbounded};
 
 /// A Vob is a "vector of bits": a sequence of bits which exposes a `Vec`-like interface. Whereas
 /// `Vec<bool>` requires 1 byte of storage per bit, `Vob` requires only 1 bit of storage per bit.
@@ -107,14 +107,14 @@ use range::{Included, Excluded, RangeBounds, Unbounded};
 /// `Vob`'s [`set_all(false)`](struct.Vob.html#method.set_all) function.
 #[derive(Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Vob<T=usize> {
+pub struct Vob<T = usize> {
     /// How many bits are stored in this Vob?
     len: usize,
     /// The underlying storage. We refer to a single instance of `T` as a block. Since the storage
     /// consists of (potentially multiple-byte) blocks, there may be "unused" bits in the final
     /// block. We guarantee that, at all points visible to the user, the "unused" bits are set to
     /// 0.
-    vec: Vec<T>
+    vec: Vec<T>,
 }
 
 // In an ideal world, Rust's type defaults would allow us to fold the two impl blocks into one and
@@ -136,7 +136,7 @@ impl Vob<usize> {
     pub fn with_capacity(capacity: usize) -> Vob<usize> {
         Vob {
             len: 0,
-            vec: Vec::with_capacity(blocks_required::<usize>(capacity))
+            vec: Vec::with_capacity(blocks_required::<usize>(capacity)),
         }
     }
 
@@ -174,10 +174,9 @@ impl Vob<usize> {
     /// }
     /// ```
     pub fn from_bytes(slice: &[u8]) -> Vob<usize> {
-        let mut v = Vob::with_capacity(slice.len()
-                                            .checked_mul(8)
-                                            .expect("Overflow detected"));
-        for i in 0..blocks_required::<usize>(slice.len() * 8) {
+        let new_len = slice.len().checked_mul(8).expect("Overflow detected");
+        let mut v = Vob::with_capacity(new_len);
+        for i in 0..blocks_required::<usize>(new_len) {
             let mut w = usize::zero();
             for j in 0..bytes_per_block::<usize>() {
                 let off = i * bytes_per_block::<usize>() + j;
@@ -198,7 +197,7 @@ impl Vob<usize> {
             }
             v.vec.push(w);
         }
-        v.len = slice.len() * 8;
+        v.len = new_len;
         v
     }
 }
@@ -217,7 +216,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     pub fn new_with_storage_type(capacity: usize) -> Vob<T> {
         Vob {
             len: 0,
-            vec: Vec::with_capacity(capacity)
+            vec: Vec::with_capacity(capacity),
         }
     }
 
@@ -482,25 +481,26 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     pub fn iter(&self) -> Iter<T> {
         Iter {
             vob: self,
-            range: 0..self.len
+            range: 0..self.len,
         }
     }
 
     /// Convert a `RangeBounds` into a `Range`, taking into account this `Vob`'s length.
     fn process_range<R>(&self, range: R) -> Range<usize>
-        where R: RangeBounds<usize>
+    where
+        R: RangeBounds<usize>,
     {
         let start = match range.start_bound() {
             Included(t) => min(*t, self.len),
             Excluded(t) => min(*t + 1, self.len),
-            Unbounded => 0
+            Unbounded => 0,
         };
         let end = match range.end_bound() {
             Included(t) => min(*t + 1, self.len()),
             Excluded(t) => min(*t, self.len()),
-            Unbounded => self.len
+            Unbounded => self.len,
         };
-        Range{start, end}
+        Range { start, end }
     }
 
     /// Returns an iterator which efficiently produces the index of each set bit in the specified
@@ -518,11 +518,12 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// assert_eq!(iterator.next(), None);
     /// ```
     pub fn iter_set_bits<R>(&self, range: R) -> IterSetBits<T>
-        where R: RangeBounds<usize>
+    where
+        R: RangeBounds<usize>,
     {
         IterSetBits {
             vob: self,
-            range: self.process_range(range)
+            range: self.process_range(range),
         }
     }
 
@@ -541,11 +542,12 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// assert_eq!(iterator.next(), None);
     /// ```
     pub fn iter_unset_bits<R>(&self, range: R) -> IterUnsetBits<T>
-        where R: RangeBounds<usize>
+    where
+        R: RangeBounds<usize>,
     {
         IterUnsetBits {
             vob: self,
-            range: self.process_range(range)
+            range: self.process_range(range),
         }
     }
 
@@ -561,7 +563,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// assert_eq!(v2.iter_storage().last(), Some(1));
     /// ```
     pub fn iter_storage(&self) -> StorageIter<T> {
-        StorageIter{iter: self.vec.iter()}
+        StorageIter {
+            iter: self.vec.iter(),
+        }
     }
 
     /// Resizes the Vob in-place so that `len` is equal to `new_len`.
@@ -583,7 +587,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     pub fn resize(&mut self, new_len: usize, value: bool) {
         if new_len <= self.len {
             self.truncate(new_len);
-            return
+            return;
         }
         if value && self.len > 0 {
             // If we're resizing with trues, we need to extend the last block with true bits. We
@@ -592,11 +596,10 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
             let v = self.vec[off];
             self.vec[off] = v | (T::max_value() << (self.len % bits_per_block::<T>()));
         }
-        self.vec.resize(blocks_required::<T>(new_len), if value {
-                                                           T::max_value()
-                                                       } else {
-                                                           T::zero()
-                                                       });
+        self.vec.resize(
+            blocks_required::<T>(new_len),
+            if value { T::max_value() } else { T::zero() },
+        );
         self.len = new_len;
         self.mask_last_block();
     }
@@ -763,7 +766,10 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// ```
     pub fn and(&mut self, other: &Vob<T>) -> bool {
         if self.len != other.len {
-            panic!("Cannot 'and' two Vobs of different length ({}  {})", self.len, other.len);
+            panic!(
+                "Cannot 'and' two Vobs of different length ({}  {})",
+                self.len, other.len
+            );
         }
         let mut chngd = false;
         for (self_blk, other_blk) in self.vec.iter_mut().zip(other.vec.iter()) {
@@ -798,7 +804,10 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// ```
     pub fn or(&mut self, other: &Vob<T>) -> bool {
         if self.len != other.len {
-            panic!("Cannot 'or' two Vobs of different length ({}  {})", self.len, other.len);
+            panic!(
+                "Cannot 'or' two Vobs of different length ({}  {})",
+                self.len, other.len
+            );
         }
         let mut chngd = false;
         for (self_blk, other_blk) in self.vec.iter_mut().zip(other.vec.iter()) {
@@ -833,7 +842,10 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// ```
     pub fn xor(&mut self, other: &Vob<T>) -> bool {
         if self.len != other.len {
-            panic!("Cannot 'xor' two Vobs of different length ({}  {})", self.len, other.len);
+            panic!(
+                "Cannot 'xor' two Vobs of different length ({}  {})",
+                self.len, other.len
+            );
         }
         let mut chngd = false;
         for (self_blk, other_blk) in self.vec.iter_mut().zip(other.vec.iter()) {
@@ -952,7 +964,7 @@ impl Default for Vob<usize> {
     fn default() -> Self {
         Vob {
             len: 0,
-            vec: Vec::new()
+            vec: Vec::new(),
         }
     }
 }
@@ -969,7 +981,7 @@ impl<T: Debug + One + PrimInt + Zero> Debug for Vob<T> {
 }
 
 impl<T: Debug + One + PrimInt + Zero> Extend<bool> for Vob<T> {
-    fn extend<I: IntoIterator<Item=bool>>(&mut self, iterable: I) {
+    fn extend<I: IntoIterator<Item = bool>>(&mut self, iterable: I) {
         let iterator = iterable.into_iter();
         let (min, _) = iterator.size_hint();
         self.reserve(min);
@@ -989,7 +1001,7 @@ impl FromIterator<bool> for Vob<usize> {
     /// let v = Vob::from_iter(vec![true, false]);
     /// assert_eq!(v, Vob::from_iter(vec![true, false]));
     /// ```
-    fn from_iter<I: IntoIterator<Item=bool>>(iter: I) -> Self {
+    fn from_iter<I: IntoIterator<Item = bool>>(iter: I) -> Self {
         let mut v = Vob::new();
         v.extend(iter);
         v
@@ -1008,9 +1020,10 @@ impl<T: Debug + One + PrimInt + Zero> Index<usize> for Vob<T> {
         match self.get(index) {
             Some(true) => &TRUE,
             Some(false) => &FALSE,
-            None => panic!("index out of bounds: the len is {} but the index is {}",
-                           self.len,
-                           index)
+            None => panic!(
+                "index out of bounds: the len is {} but the index is {}",
+                self.len, index
+            ),
         }
     }
 }
@@ -1036,12 +1049,11 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for Iter<'a, T> {
 
 impl<'a, T: Debug + One + PrimInt + Zero> DoubleEndedIterator for Iter<'a, T> {
     fn next_back(&mut self) -> Option<bool> {
-        self.range.next_back()
-                  .map(|i| self.vob.get(i).unwrap())
+        self.range.next_back().map(|i| self.vob.get(i).unwrap())
     }
 }
 
-impl<'a, T: Debug + One + PrimInt + Zero> ExactSizeIterator for Iter<'a, T> { }
+impl<'a, T: Debug + One + PrimInt + Zero> ExactSizeIterator for Iter<'a, T> {}
 
 impl<'a, T: Debug + One + PrimInt + Zero> IntoIterator for &'a Vob<T> {
     type Item = bool;
@@ -1065,7 +1077,7 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterSetBits<'a, T> {
         debug_assert!(self.range.end <= self.vob.len);
         if let Some(mut i) = self.range.next() {
             // Bear in mind that i might not be aligned.
-            for b in block_offset::<T>(i) .. blocks_required::<T>(self.range.end) {
+            for b in block_offset::<T>(i)..blocks_required::<T>(self.range.end) {
                 let v = self.vob.vec[b];
                 if v != T::zero() {
                     // We have a block with a bit set. Find the next bit set after 'i %
@@ -1109,7 +1121,7 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterUnsetBits<'a, T> {
         debug_assert!(self.range.end <= self.vob.len);
         if let Some(mut i) = self.range.next() {
             // Bear in mind that i might not be aligned.
-            for b in block_offset::<T>(i) .. blocks_required::<T>(self.range.end) {
+            for b in block_offset::<T>(i)..blocks_required::<T>(self.range.end) {
                 let v = self.vob.vec[b];
                 if v != T::max_value() {
                     // We have a block with a bit unset. Find the next bit unset after 'i %
@@ -1154,7 +1166,7 @@ impl<T: Debug + One + PrimInt + Zero> PartialEq for Vob<T> {
 
 impl<T: Debug + One + PrimInt + Zero> Eq for Vob<T> {}
 
-impl<T :Debug + Hash + One + PrimInt + Zero> Hash for Vob<T> {
+impl<T: Debug + Hash + One + PrimInt + Zero> Hash for Vob<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         for blk in self.iter_storage() {
             blk.hash(state);
@@ -1198,10 +1210,10 @@ fn block_offset<T>(off: usize) -> usize {
 /// to store those bits.
 fn blocks_required<T>(num_bits: usize) -> usize {
     num_bits / bits_per_block::<T>() + if num_bits % bits_per_block::<T>() == 0 {
-                                           0
-                                       } else {
-                                           1
-                                       }
+        0
+    } else {
+        1
+    }
 }
 
 #[macro_export]
@@ -1290,8 +1302,10 @@ mod tests {
     #[test]
     fn test_capacity() {
         assert_eq!(Vob::new().capacity(), 0);
-        assert_eq!(Vob::with_capacity(size_of::<usize>() * 8 + 1).capacity(),
-                                      size_of::<usize>() * 8 * 2);
+        assert_eq!(
+            Vob::with_capacity(size_of::<usize>() * 8 + 1).capacity(),
+            size_of::<usize>() * 8 * 2
+        );
     }
 
     #[test]
