@@ -174,8 +174,9 @@ impl Vob<usize> {
     /// }
     /// ```
     pub fn from_bytes(slice: &[u8]) -> Vob<usize> {
-        let mut v = Vob::with_capacity(slice.len().checked_mul(8).expect("Overflow detected"));
-        for i in 0..blocks_required::<usize>(slice.len() * 8) {
+        let new_len = slice.len().checked_mul(8).expect("Overflow detected");
+        let mut v = Vob::with_capacity(new_len);
+        for i in 0..blocks_required::<usize>(new_len) {
             let mut w = usize::zero();
             for j in 0..bytes_per_block::<usize>() {
                 let off = i * bytes_per_block::<usize>() + j;
@@ -196,7 +197,7 @@ impl Vob<usize> {
             }
             v.vec.push(w);
         }
-        v.len = slice.len() * 8;
+        v.len = new_len;
         v
     }
 }
