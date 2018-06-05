@@ -8,8 +8,8 @@
 // option. This file may not be copied, modified, or distributed
 // except according to those terms.
 
-use std::ops::{RangeFull, Range, RangeTo, RangeFrom};
 pub use std::collections::Bound::{self, Excluded, Included, Unbounded};
+use std::ops::{Range, RangeFrom, RangeFull, RangeTo};
 
 pub trait RangeBounds<T: ?Sized> {
     fn start_bound(&self) -> Bound<&T>;
