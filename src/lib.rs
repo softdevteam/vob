@@ -24,7 +24,7 @@ use std::fmt;
 use std::fmt::Debug;
 use std::hash::{Hash, Hasher};
 use std::iter::FromIterator;
-use std::mem::size_of;
+use std::mem::{replace, size_of};
 use std::ops::{Index, Range};
 use std::slice;
 
@@ -306,6 +306,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// assert_eq!(v.get(1), Some(false));
     /// ```
     pub fn push(&mut self, value: bool) {
+        debug_assert_eq!(self.vec.len(), blocks_required::<T>(self.len));
         if self.len % bits_per_block::<T>() == 0 {
             self.vec.push(T::zero());
         }
@@ -331,8 +332,8 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         // The subtraction can't underflow because self.len > 0.
         let v = self.get(self.len - 1);
         debug_assert!(v.is_some());
-        self.len -= 1;
-        self.mask_last_block();
+        let new_len = self.len - 1;
+        self.truncate(new_len);
         v
     }
 
@@ -371,16 +372,46 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// assert_eq!(v2, Vob::from_elem(1, false));
     /// ```
     pub fn split_off(&mut self, at: usize) -> Vob<T> {
+        debug_assert_eq!(self.vec.len(), blocks_required::<T>(self.len));
         if at >= self.len {
+            // Return empty Vob
             return Vob::<T>::new_with_storage_type(0);
+        } else if at == 0 {
+            // efficiently swap structs
+            let mut result = Vob::<T>::new_with_storage_type(0);
+            result.vec = replace(&mut self.vec, result.vec);
+            result.len = replace(&mut self.len, result.len);
+            debug_assert_eq!(self.len, 0);
+            debug_assert_eq!(self.vec.len(), 0);
+            return result;
         }
+
+        let block_to_split = blocks_required::<T>(at) - 1;
+        let ub = at % bits_per_block::<T>();
+
         let mut nv = Vob::<T>::new_with_storage_type(self.len - at);
-        // This could easily be made more efficient.
-        for blk in self.iter().skip(at) {
-            nv.push(blk);
+
+        // If ub == 0, we shouldn't copy block_to_split into the new Vob, because it fully fits
+        // into the old Vob.
+        if ub > 0 {
+            // The number of bits from block_to_split that end up in the new Vob
+            let first_block_len = if bits_per_block::<T>() - ub > self.len - at {
+                self.len - at
+            } else {
+                bits_per_block::<T>() - ub
+            };
+
+            nv.vec.push(self.vec[block_to_split] >> ub);
+            nv.len = first_block_len;
+            nv.mask_last_block();
         }
-        self.len = at;
-        self.mask_last_block();
+
+        // We only need to do this if there are blocks remaining
+        if self.vec.len() > block_to_split + 1 {
+            nv.extend_blocks(self, block_to_split + 1);
+        }
+
+        self.truncate(at);
         nv
     }
 
@@ -608,12 +639,21 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// }
     /// ```
     pub fn extend_from_vob(&mut self, other: &Vob<T>) {
+        self.extend_blocks(other, 0);
+    }
+
+    /// Copy entire blocks from other into self, respecting offset.
+    ///
+    /// block_offset * bits_per_block should be less than other.len
+    fn extend_blocks(&mut self, other: &Vob<T>, block_offset: usize) {
+        debug_assert!(block_offset * bits_per_block::<T>() <= other.len(),);
+        debug_assert_eq!(self.vec.len(), blocks_required::<T>(self.len));
         self.reserve(other.len());
         // used bits in last block
         let ub = self.len % bits_per_block::<T>();
         if ub == 0 {
             // If there are no unused bits, we can just push the new blocks
-            self.vec.extend(other.vec.clone());
+            self.vec.extend(other.vec.iter().skip(block_offset));
         } else {
             // We need to do things very carefully here. We need to shift each block ub to the
             // left. We use rotate to move those bits to the bottom part of the integer. Then we
@@ -624,12 +664,12 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
             // this mask has the last ub bits set
             let msk = (T::one() << ub) - T::one();
 
-            for block in &other.vec {
+            for block in other.vec.iter().skip(block_offset) {
                 // rotate block to the left
                 let new_block: T = block.rotate_left(ub as u32);
                 {
                     let last = self.vec.last_mut().unwrap();
-                    debug_assert_eq!(*last & !msk, T::zero(), "the last bits in the last block weren't 0");
+                    debug_assert_eq!(*last & !msk, T::zero());
                     // add the last (upper) bits of new_block
                     // ex: ub=4; 0000101 | 1110111 & !(0001111)
                     //   =>      0000101 | 1110000 => 1110101
@@ -640,13 +680,17 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
             }
         }
 
+        // Compute new length for self.
         let new_len = self.len
-            .checked_add(other.len())
+            //  the subtraction won't overflow because of the bounds assumption above.
+            .checked_add(other.len() - block_offset * bits_per_block::<T>())
             .expect("Overflow detected");
+
         // We need to truncate because we always push the last block from other even if it's empty.
         self.vec.truncate(blocks_required::<T>(new_len));
-        self.len = new_len;
 
+        // correct len
+        self.len = new_len;
         self.mask_last_block();
     }
 
@@ -807,6 +851,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     // contents for the feature-guarded implementations next.
     #[inline]
     fn _mask_last_block(&mut self) {
+        debug_assert_eq!(self.vec.len(), blocks_required::<T>(self.len));
         let ub = self.len % bits_per_block::<T>();
         // If there are no unused bits, there's no need to perform masking.
         if ub > 0 {
@@ -1480,12 +1525,12 @@ mod tests {
     #[test]
     fn test_extend_from_vob() {
         let mut rng = rand::thread_rng();
-        for _ in 0..20 {
-            let len: u8 = rng.gen();
-            let mut a = random_vob(len as usize);
+        for _ in 0..200 {
+            let len_a: u8 = rng.gen();
+            let len_b: u8 = rng.gen();
+            let mut a = random_vob(len_a as usize);
             let mut a_copy = a.clone();
-            let len: u8 = rng.gen();
-            let b = random_vob(len as usize);
+            let b = random_vob(len_b as usize);
             a.extend_from_vob(&b);
             a_copy.extend(b.iter());
             assert_eq!(a_copy, a);
@@ -1503,5 +1548,31 @@ mod tests {
             storage[0] = 0b111;
         }
         assert_eq!(v1.get(1), Some(true));
+    }
+
+    #[test]
+    fn test_split_off() {
+        for len_a in 0..128 {
+            for len_b in 0..128 {
+                let a = random_vob(len_a as usize);
+                let b = random_vob(len_b as usize);
+                let mut joined = a.clone();
+                joined.extend_from_vob(&b);
+                assert_eq!(joined.len(), len_a + len_b);
+                let b_ = joined.split_off(len_a as usize);
+                assert_eq!(a, joined, "lower part for {}, {}", len_a, len_b);
+                assert_eq!(b, b_, "upper part for {}, {}", len_a, len_b);
+            }
+        }
+    }
+
+    #[test]
+    fn push_adjusts_vec_correctly() {
+        let mut v = Vob::new();
+        v.push(false);
+        assert_eq!(v.vec.len(), 1);
+        v.pop();
+        v.push(true);
+        assert_eq!(v.vec.len(), 1);
     }
 }
