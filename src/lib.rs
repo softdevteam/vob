@@ -1224,6 +1224,9 @@ fn blocks_required<T>(num_bits: usize) -> usize {
 /// ```
 macro_rules! vob {
     (@single $($x:tt)*) => (());
+    // handle trailing comma until https://github.com/rust-lang/rust/issues/48075
+    // (macro_at_most_once_rep) stabilises
+    ($($rest:expr),+,) => ( vob!($($rest),+) );
     (@count $($rest:expr),*) => (<[()]>::len(&[$(vob!(@single $rest)),*]));
     ($elem:expr; $n:expr) => (
         $crate::Vob::from_elem($elem, $n)
