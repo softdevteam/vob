@@ -1,0 +1,19 @@
+# vob 1.3.0 (2018-06-11)
+
+* Add `extend_from_vob` function.
+* Add `unsafe_internals` feature, which allows external crates unsafe access to
+  Vob's internal (useful for speed, but bad for forwards compatibility!).
+* Various performance improvements.
+* Use `rustfmt`.
+
+# vob 1.2.0 (2018-05-08)
+
+* Add `from_bytes` function.
+
+# vob 1.1.0 (2018-03-29)
+
+* Add `serde` feature to enable [Serde](https://serde.rs/) support.
+
+# vob 1.0.0 (2018-03-14)
+
+First stable release.
