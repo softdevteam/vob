@@ -9,7 +9,13 @@ matrix:
     - rust: stable
     - rust: beta
 
+before_script:
+  - rustup component add rustfmt-preview
+
 script:
   - cargo build --tests --features "$FEATURES"
   - cargo test --features "$FEATURES"
   - "[ \"$TRAVIS_RUST_VERSION\" != 'nightly' ] ||  cargo bench --features \"$FEATURES\""
+  - "[ \"$TRAVIS_RUST_VERSION\" != 'nightly' ] ||  cargo fmt -- --check"
+
+cache: cargo
