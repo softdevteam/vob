@@ -216,7 +216,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     pub fn new_with_storage_type(capacity: usize) -> Vob<T> {
         Vob {
             len: 0,
-            vec: Vec::with_capacity(capacity),
+            vec: Vec::with_capacity(blocks_required::<T>(capacity)),
         }
     }
 
