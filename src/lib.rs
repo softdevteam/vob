@@ -752,7 +752,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// fn main() {
     ///     let mut v1 = vob![true, false, false];
     ///     let v2 = vob![true, true, false];
-    ///     v1.and(&v2);
+    ///     assert_eq!(v1.and(&v2), false);
     ///     assert_eq!(v1, vob![true, false, false]);
     /// }
     /// ```
@@ -767,10 +767,8 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         for (self_blk, other_blk) in self.vec.iter_mut().zip(other.vec.iter()) {
             let old_v = *self_blk;
             let new_v = old_v & *other_blk;
-            if old_v != new_v {
-                *self_blk = new_v;
-                chngd = true;
-            }
+            *self_blk = new_v;
+            chngd = chngd | (old_v != new_v);
         }
         // We don't need to mask the last block as those bits can't be set by "&" by definition.
         chngd
@@ -790,7 +788,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// fn main() {
     ///     let mut v1 = vob![true, false, false];
     ///     let v2 = vob![false, true, false];
-    ///     v1.or(&v2);
+    ///     assert_eq!(v1.or(&v2), true);
     ///     assert_eq!(v1, vob![true, true, false]);
     /// }
     /// ```
@@ -805,10 +803,8 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         for (self_blk, other_blk) in self.vec.iter_mut().zip(other.vec.iter()) {
             let old_v = *self_blk;
             let new_v = old_v | *other_blk;
-            if old_v != new_v {
-                *self_blk = new_v;
-                chngd = true;
-            }
+            *self_blk = new_v;
+            chngd = chngd | (old_v != new_v);
         }
         // We don't need to mask the last block per our assumptions
         chngd
@@ -828,7 +824,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// fn main() {
     ///     let mut v1 = vob![true, false, true];
     ///     let v2 = vob![false, true, true];
-    ///     v1.xor(&v2);
+    ///     assert_eq!(v1.xor(&v2), true);
     ///     assert_eq!(v1, vob![true, true, false]);
     /// }
     /// ```
@@ -843,10 +839,8 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         for (self_blk, other_blk) in self.vec.iter_mut().zip(other.vec.iter()) {
             let old_v = *self_blk;
             let new_v = old_v ^ *other_blk;
-            if old_v != new_v {
-                *self_blk = new_v;
-                chngd = true;
-            }
+            *self_blk = new_v;
+            chngd = chngd | (old_v != new_v);
         }
         // We don't need to mask the last block per our assumptions
         chngd
