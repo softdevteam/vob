@@ -1,3 +1,7 @@
+# vob 1.3.1 (2018-06-20)
+
+* Don't overallocate memory in `new_with_storage_type`.
+
 # vob 1.3.0 (2018-06-11)
 
 * Add `extend_from_vob` function.
