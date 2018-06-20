@@ -2,8 +2,10 @@
 
 #[macro_use]
 extern crate vob;
+extern crate rand;
 extern crate test;
 
+use rand::Rng;
 use test::Bencher;
 use vob::*;
 
@@ -58,5 +60,44 @@ fn split_off(b: &mut Bencher) {
     b.iter(|| {
         let mut a = source.clone();
         a.split_off(N / 2)
+    });
+}
+
+#[bench]
+fn xor(bench: &mut Bencher) {
+    let mut a = Vob::with_capacity(N);
+    let mut rng = rand::thread_rng();
+    a.extend((0..N).map(|_| rng.gen::<bool>()));
+    let mut b = Vob::with_capacity(N);
+    b.extend((0..N).map(|_| rng.gen::<bool>()));
+
+    bench.iter(|| {
+        a.xor(&b);
+    });
+}
+
+#[bench]
+fn or(bench: &mut Bencher) {
+    let mut a = Vob::with_capacity(N);
+    let mut rng = rand::thread_rng();
+    a.extend((0..N).map(|_| rng.gen::<bool>()));
+    let mut b = Vob::with_capacity(N);
+    b.extend((0..N).map(|_| rng.gen::<bool>()));
+
+    bench.iter(|| {
+        a.or(&b);
+    });
+}
+
+#[bench]
+fn and(bench: &mut Bencher) {
+    let mut a = Vob::with_capacity(N);
+    let mut rng = rand::thread_rng();
+    a.extend((0..N).map(|_| rng.gen::<bool>()));
+    let mut b = Vob::with_capacity(N);
+    b.extend((0..N).map(|_| rng.gen::<bool>()));
+
+    bench.iter(|| {
+        a.and(&b);
     });
 }
