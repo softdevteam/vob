@@ -810,7 +810,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
                 chngd = true;
             }
         }
-        // We don't need to mask the last block as those bits can't be set by "|" by definition.
+        // We don't need to mask the last block per our assumptions
         chngd
     }
 
@@ -848,7 +848,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
                 chngd = true;
             }
         }
-        self.mask_last_block();
+        // We don't need to mask the last block per our assumptions
         chngd
     }
 
