@@ -1,3 +1,9 @@
+# vob 1.3.2 (2018-06-30)
+
+* Improve performance of the `xor`, `and`, and `or` functions.
+* Add `fast_reverse` feature: on nightly, we automatically try to use the
+  `fast_reverse` function to improve performance.
+
 # vob 1.3.1 (2018-06-20)
 
 * Don't overallocate memory in `new_with_storage_type`.
