@@ -918,7 +918,6 @@ impl<T> Vob<T> {
     ///     assert_eq!(storage[0], 0b101);
     /// }
     /// ```
-    #[cfg(feature = "unsafe_internals")]
     pub unsafe fn get_storage_mut(&mut self) -> &mut Vec<T> {
         &mut self.vec
     }
