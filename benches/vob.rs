@@ -12,101 +12,102 @@ use vob::*;
 const N: usize = 100000;
 
 #[bench]
-fn empty(b: &mut Bencher) {
-    b.iter(|| Vob::with_capacity(N));
+fn empty(bench: &mut Bencher) {
+    bench.iter(|| Vob::with_capacity(N));
 }
 
 #[bench]
-fn extend(b: &mut Bencher) {
+fn extend(bench: &mut Bencher) {
     // first initialise the source vector to drain
-    let mut source = Vob::with_capacity(N);
-    source.extend((0..N).map(|i| i % 2 == 0));
+    let mut v1 = Vob::with_capacity(N);
+    v1.extend((0..N).map(|i| i % 2 == 0));
 
-    b.iter(|| {
-        let mut vector = Vob::with_capacity(N);
-        vector.extend(source.iter())
+    bench.iter(|| {
+        let mut v2 = Vob::with_capacity(N);
+        v2.extend(v1.iter())
     });
 }
 
 #[bench]
-fn extend_vob_aligned(b: &mut Bencher) {
+fn extend_vob_aligned(bench: &mut Bencher) {
     // first initialise the source vector to drain
-    let mut source = Vob::with_capacity(N);
-    source.extend((0..N).map(|i| i % 2 == 0));
+    let mut v1 = Vob::with_capacity(N);
+    v1.extend((0..N).map(|i| i % 2 == 0));
 
-    b.iter(|| {
-        let mut vector = Vob::with_capacity(N);
-        vector.extend_from_vob(&source)
+    bench.iter(|| {
+        let mut v2 = Vob::with_capacity(N);
+        v2.extend_from_vob(&v1)
     });
 }
 
 #[bench]
-fn extend_vob_not_aligned(b: &mut Bencher) {
+fn extend_vob_not_aligned(bench: &mut Bencher) {
     // first initialise the source vector to drain
-    let mut source = Vob::with_capacity(N);
-    source.extend((0..N).map(|i| i % 2 == 0));
+    let mut v1 = Vob::with_capacity(N);
+    v1.extend((0..N).map(|i| i % 2 == 0));
 
-    b.iter(|| {
-        let mut vector = vob![true];
-        vector.extend_from_vob(&source)
+    bench.iter(|| {
+        let mut v2 = vob![true];
+        v2.extend_from_vob(&v1)
     });
 }
 
 #[bench]
-fn split_off(b: &mut Bencher) {
-    let mut source = Vob::with_capacity(N);
-    source.extend((0..N).map(|i| i % 2 == 0));
+fn split_off(bench: &mut Bencher) {
+    let mut v1 = Vob::with_capacity(N);
+    v1.extend((0..N).map(|i| i % 2 == 0));
 
-    b.iter(|| {
-        let mut a = source.clone();
-        a.split_off(N / 2)
+    bench.iter(|| {
+        let mut v2 = v1.clone();
+        v2.split_off(N / 2)
     });
 }
 
 #[bench]
 fn xor(bench: &mut Bencher) {
-    let mut a = Vob::with_capacity(N);
+    let mut v1 = Vob::with_capacity(N);
     let mut rng = rand::thread_rng();
-    a.extend((0..N).map(|_| rng.gen::<bool>()));
-    let mut b = Vob::with_capacity(N);
-    b.extend((0..N).map(|_| rng.gen::<bool>()));
+    v1.extend((0..N).map(|_| rng.gen::<bool>()));
+    let mut v2 = Vob::with_capacity(N);
+    v2.extend((0..N).map(|_| rng.gen::<bool>()));
 
     bench.iter(|| {
-        a.xor(&b);
+        v1.xor(&v2);
     });
 }
 
 #[bench]
 fn or(bench: &mut Bencher) {
-    let mut a = Vob::with_capacity(N);
+    let mut v1 = Vob::with_capacity(N);
     let mut rng = rand::thread_rng();
-    a.extend((0..N).map(|_| rng.gen::<bool>()));
-    let mut b = Vob::with_capacity(N);
-    b.extend((0..N).map(|_| rng.gen::<bool>()));
+    v1.extend((0..N).map(|_| rng.gen::<bool>()));
+    let mut v2 = Vob::with_capacity(N);
+    v2.extend((0..N).map(|_| rng.gen::<bool>()));
 
     bench.iter(|| {
-        a.or(&b);
+        v1.or(&v2);
     });
 }
 
 #[bench]
 fn and(bench: &mut Bencher) {
-    let mut a = Vob::with_capacity(N);
+    let mut v1 = Vob::with_capacity(N);
     let mut rng = rand::thread_rng();
-    a.extend((0..N).map(|_| rng.gen::<bool>()));
-    let mut b = Vob::with_capacity(N);
-    b.extend((0..N).map(|_| rng.gen::<bool>()));
+    v1.extend((0..N).map(|_| rng.gen::<bool>()));
+    let mut v2 = Vob::with_capacity(N);
+    v2.extend((0..N).map(|_| rng.gen::<bool>()));
 
     bench.iter(|| {
-        a.and(&b);
+        v1.and(&v2);
     });
 }
 
 #[bench]
-fn from_bytes(b: &mut Bencher) {
+fn from_bytes(bench: &mut Bencher) {
     let mut rng = rand::thread_rng();
-    let mut source = [0u8; 1024];
-    rng.fill(&mut source);
+    let mut v1 = [0u8; 1024];
+    rng.fill(&mut v1);
 
-    b.iter(|| Vob::from_bytes(&source));
+    bench.iter(|| Vob::from_bytes(&v1));
+
 }
