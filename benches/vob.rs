@@ -109,5 +109,12 @@ fn from_bytes(bench: &mut Bencher) {
     rng.fill(&mut v1);
 
     bench.iter(|| Vob::from_bytes(&v1));
+}
 
+#[bench]
+fn iter_set_bits(bench: &mut Bencher) {
+    let mut a = Vob::with_capacity(N);
+    let mut rng = rand::thread_rng();
+    a.extend((0..N).map(|_| rng.gen::<bool>()));
+    bench.iter(|| a.iter_set_bits(..).count());
 }
