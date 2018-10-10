@@ -14,6 +14,16 @@ when functions such as
 [`iter_set_bits`](https://docs.rs/vob/0.1.0/vob/struct.Vob.html#method.iter_set_bits)
 are used.
 
+## Usage
+
+```rust
+use vob::Vob;
+
+let mut v = vob![true, false, true];
+assert_eq!(v[1], false);
+v.set(1, true);
+assert_eq!(v.get(1), true);
+```
 
 ## Migrating from `Vec<bool>`
 
