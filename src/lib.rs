@@ -20,14 +20,15 @@ extern crate serde;
 #[cfg(test)]
 extern crate rand;
 
-use std::cmp::{min, PartialEq};
-use std::fmt;
-use std::fmt::Debug;
-use std::hash::{Hash, Hasher};
-use std::iter::FromIterator;
-use std::mem::{replace, size_of};
-use std::ops::{Index, Range};
-use std::slice;
+use std::{
+    cmp::{min, PartialEq},
+    fmt::{self, Debug},
+    hash::{Hash, Hasher},
+    iter::FromIterator,
+    mem::{replace, size_of},
+    ops::{Index, Range},
+    slice,
+};
 
 use num_traits::{One, PrimInt, Zero};
 
@@ -1253,12 +1254,13 @@ macro_rules! vob {
 #[cfg(test)]
 mod tests {
     use super::{block_offset, blocks_required, Vob};
-    use rand;
-    use rand::Rng;
-    use std::collections::hash_map::DefaultHasher;
-    use std::hash::{Hash, Hasher};
-    use std::iter::FromIterator;
-    use std::mem::size_of;
+    use rand::{self, Rng};
+    use std::{
+        collections::hash_map::DefaultHasher,
+        hash::{Hash, Hasher},
+        iter::FromIterator,
+        mem::size_of,
+    };
 
     #[test]
     fn test_block_offset() {
