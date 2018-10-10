@@ -11,6 +11,7 @@ before_script:
   - rustup component add rustfmt-preview
 
 script:
+  - cargo fmt --all -- --check
   - cargo build --tests --features "$FEATURES"
   - cargo test --features "$FEATURES"
   - "[ \"$TRAVIS_RUST_VERSION\" != 'nightly' ] ||  cargo bench --features \"$FEATURES\""
