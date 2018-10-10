@@ -17,12 +17,13 @@ are used.
 ## Usage
 
 ```rust
-use vob::Vob;
+#[macro_use] extern crate vob;
 
-let mut v = vob![true, false, true];
-assert_eq!(v[1], false);
-v.set(1, true);
-assert_eq!(v.get(1), true);
+let mut v = vob![false, true, false];
+assert_eq!(v[2], false);
+v.set(2, true);
+assert_eq!(v[2], true);
+assert_eq!(v.iter_set_bits(..).collect::<Vec<_>>(), vec![1, 2]);
 ```
 
 ## Migrating from `Vec<bool>`
