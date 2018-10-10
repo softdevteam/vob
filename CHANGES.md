@@ -1,3 +1,9 @@
+# vob 2.0.0 (2018-10-10)
+
+* Change `set` so that if passed an out of bounds index it panics (previously it
+  returned None, but since one doesn't generally check the return value of
+  `set`, this led to errors being overlooked).
+
 # vob 1.3.2 (2018-06-30)
 
 * Improve performance of the `xor`, `and`, and `or` functions.
