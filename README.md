@@ -1,3 +1,7 @@
+[![Build Status](https://api.travis-ci.org/softdevteam/vob.svg?branch=master)](https://travis-ci.org/softdevteam/vob)
+[![Latest version](https://img.shields.io/crates/v/vob.svg)](https://crates.io/crates/vob)
+[![Documentation](https://docs.rs/vob/badge.svg)](https://docs.rs/vob)
+
 # Vector of Bits (Vob)
 
 A Vob is a "vector of bits": a sequence of bits which exposes a `Vec`-like
@@ -10,6 +14,16 @@ when functions such as
 [`iter_set_bits`](https://docs.rs/vob/0.1.0/vob/struct.Vob.html#method.iter_set_bits)
 are used.
 
+## Usage
+
+```rust
+use vob::Vob;
+
+let mut v = vob![true, false, true];
+assert_eq!(v[1], false);
+v.set(1, true);
+assert_eq!(v.get(1), true);
+```
 
 ## Migrating from `Vec<bool>`
 
