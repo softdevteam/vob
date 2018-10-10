@@ -445,8 +445,8 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         Some(blk & (T::one() << (index % bits_per_block::<T>())) != T::zero())
     }
 
-    /// Sets the value of the element at position `index` or `None` if out of bounds. Returns
-    /// `true` if this led to a change in the underlying storage or `None` if out of bounds.
+    /// Sets the value of the element at position `index`. Returns `true` if this led to a change
+    /// in the underlying storage or `false` otherwise.
     ///
     /// # Examples
     /// ```
@@ -455,12 +455,19 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// v.push(false);
     /// v.set(0, true);
     /// assert_eq!(v.get(0), Some(true));
-    /// assert_eq!(v.set(0, false), Some(true));
-    /// assert_eq!(v.set(0, false), Some(false));
+    /// assert_eq!(v.set(0, false), true);
+    /// assert_eq!(v.set(0, false), false);
     /// ```
-    pub fn set(&mut self, index: usize, value: bool) -> Option<bool> {
+    ///
+    /// # Panics
+    ///
+    /// If `index` is out of bounds.
+    pub fn set(&mut self, index: usize, value: bool) -> bool {
         if index >= self.len {
-            return None;
+            panic!(
+                "Index out of bounds: the len is {} but the index is {}",
+                self.len, index
+            );
         }
         let msk = T::one() << (index % bits_per_block::<T>());
         let off = block_offset::<T>(index);
@@ -468,9 +475,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         let new_v = if value { old_v | msk } else { old_v & !msk };
         if new_v != old_v {
             self.vec[off] = new_v;
-            Some(true)
+            true
         } else {
-            Some(false)
+            false
         }
     }
 
@@ -1294,8 +1301,8 @@ mod tests {
         v.set(size_of::<u8>() * 8, false);
         assert_eq!(v.get(size_of::<u8>() * 8), Some(false));
         assert_eq!(v.get(size_of::<u8>() * 8 + 1), None);
-        assert_eq!(v.set(size_of::<u8>() * 8, true), Some(true));
-        assert_eq!(v.set(size_of::<u8>() * 8, true), Some(false));
+        assert_eq!(v.set(size_of::<u8>() * 8, true), true);
+        assert_eq!(v.set(size_of::<u8>() * 8, true), false);
         assert_eq!(v.get(size_of::<u8>() * 8 - 1), Some(true));
         assert_eq!(v.get(size_of::<u8>() * 8 - 2), Some(true));
     }
@@ -1344,10 +1351,18 @@ mod tests {
         v.set(size_of::<usize>() * 8, false);
         assert_eq!(v.get(size_of::<usize>() * 8), Some(false));
         assert_eq!(v.get(size_of::<usize>() * 8 + 1), None);
-        assert_eq!(v.set(size_of::<usize>() * 8, true), Some(true));
-        assert_eq!(v.set(size_of::<usize>() * 8, true), Some(false));
+        assert_eq!(v.set(size_of::<usize>() * 8, true), true);
+        assert_eq!(v.set(size_of::<usize>() * 8, true), false);
         assert_eq!(v.get(size_of::<usize>() * 8 - 1), Some(true));
         assert_eq!(v.get(size_of::<usize>() * 8 - 2), Some(true));
+    }
+
+    #[test]
+    #[should_panic]
+    fn test_set_beyond_a_word() {
+        let mut v = vob![true];
+        assert!(v.set(0, false), true);
+        v.set(1, true);
     }
 
     #[test]
