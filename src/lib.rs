@@ -1245,11 +1245,12 @@ fn block_offset<T>(off: usize) -> usize {
 /// Takes as input a number of bits requiring storage; returns an aligned number of blocks needed
 /// to store those bits.
 fn blocks_required<T>(num_bits: usize) -> usize {
-    num_bits / bits_per_block::<T>() + if num_bits % bits_per_block::<T>() == 0 {
-        0
-    } else {
-        1
-    }
+    num_bits / bits_per_block::<T>()
+        + if num_bits % bits_per_block::<T>() == 0 {
+            0
+        } else {
+            1
+        }
 }
 
 #[macro_export]
