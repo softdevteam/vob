@@ -1,3 +1,9 @@
+# vob 2.0.1 (2018-12-11)
+
+* Substantially speed up `iter_\[set|unset\]_bits` for the common case where all
+  bits are set/unset (respectively). This leads to a 3x improvement in such
+  cases, with no measurable slowdown in the general case.
+
 # vob 2.0.0 (2018-10-10)
 
 * Change `set` so that if passed an out of bounds index it panics (previously it
