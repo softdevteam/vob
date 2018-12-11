@@ -118,3 +118,23 @@ fn iter_set_bits(bench: &mut Bencher) {
     a.extend((0..N).map(|_| rng.gen::<bool>()));
     bench.iter(|| a.iter_set_bits(..).count());
 }
+
+#[bench]
+fn iter_set_bits_u8(bench: &mut Bencher) {
+    let mut a = Vob::<u8>::new_with_storage_type(N);
+    let mut rng = rand::thread_rng();
+    a.extend((0..N).map(|_| rng.gen::<bool>()));
+    bench.iter(|| a.iter_set_bits(..).count());
+}
+
+#[bench]
+fn iter_all_set_bits(bench: &mut Bencher) {
+    let a = Vob::from_elem(N, true);
+    bench.iter(|| a.iter_set_bits(..).count());
+}
+
+#[bench]
+fn iter_all_unset_bits(bench: &mut Bencher) {
+    let a = Vob::from_elem(N, true);
+    bench.iter(|| a.iter_unset_bits(..).count());
+}

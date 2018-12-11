@@ -1080,9 +1080,19 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterSetBits<'a, T> {
     fn next(&mut self) -> Option<usize> {
         debug_assert!(self.range.end <= self.vob.len);
         if let Some(mut i) = self.range.next() {
-            // Bear in mind that i might not be aligned.
-            for b in block_offset::<T>(i)..blocks_required::<T>(self.range.end) {
-                let v = self.vob.vec[b];
+            // This is a long, but fast, way of finding out what the next set bit is. The basic
+            // idea is that we try and hit the fastest possible case (a block with all bits set)
+            // with minimal operations first, falling back to the general case only if we have to.
+            let mut b = block_offset::<T>(i);
+            let mut v = self.vob.vec[b];
+            if v == T::max_value() {
+                return Some(i);
+            }
+            // At this point we've got a block which might or might not have some bits set. We now
+            // fall back to the general case.
+            loop {
+                // If this block doesn't have any bits set at all, we can zoom straight on to the
+                // next block.
                 if v != T::zero() {
                     // We have a block with a bit set. Find the next bit set after 'i %
                     // bits_per_block()', bearing in mind that it may have been the last bit set
@@ -1100,10 +1110,16 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterSetBits<'a, T> {
                         }
                     }
                 }
+                b += 1;
+                if b == blocks_required::<T>(self.range.end) {
+                    // We've exhausted the iterator.
+                    self.range.start = self.range.end;
+                    break;
+                }
+                v = self.vob.vec[b];
                 i = b * bits_per_block::<T>();
             }
         }
-        self.range.start = self.range.end;
         None
     }
 
@@ -1124,9 +1140,19 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterUnsetBits<'a, T> {
     fn next(&mut self) -> Option<usize> {
         debug_assert!(self.range.end <= self.vob.len);
         if let Some(mut i) = self.range.next() {
-            // Bear in mind that i might not be aligned.
-            for b in block_offset::<T>(i)..blocks_required::<T>(self.range.end) {
-                let v = self.vob.vec[b];
+            // This is a long, but fast, way of finding out what the next unset bit is. The basic
+            // idea is that we try and hit the fastest possible case (a block with all bits unset)
+            // with minimal operations first, falling back to the general case only if we have to.
+            let mut b = block_offset::<T>(i);
+            let mut v = self.vob.vec[b];
+            if v == T::zero() {
+                return Some(i);
+            }
+            // At this point we've got a block which might or might not have some bits unset. We
+            // now fall back to the general case.
+            loop {
+                // If this block doesn't have any unset bits at all, we can zoom straight on to the
+                // next block.
                 if v != T::max_value() {
                     // We have a block with a bit unset. Find the next bit unset after 'i %
                     // bits_per_block()', bearing in mind that it may have been the last bit unset
@@ -1145,10 +1171,16 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterUnsetBits<'a, T> {
                         return Some(bs);
                     }
                 }
+                b += 1;
+                if b == blocks_required::<T>(self.range.end) {
+                    // We've exhausted the iterator.
+                    self.range.start = self.range.end;
+                    break;
+                }
+                v = self.vob.vec[b];
                 i = b * bits_per_block::<T>();
             }
         }
-        self.range.start = self.range.end;
         None
     }
 
@@ -1213,11 +1245,12 @@ fn block_offset<T>(off: usize) -> usize {
 /// Takes as input a number of bits requiring storage; returns an aligned number of blocks needed
 /// to store those bits.
 fn blocks_required<T>(num_bits: usize) -> usize {
-    num_bits / bits_per_block::<T>() + if num_bits % bits_per_block::<T>() == 0 {
-        0
-    } else {
-        1
-    }
+    num_bits / bits_per_block::<T>()
+        + if num_bits % bits_per_block::<T>() == 0 {
+            0
+        } else {
+            1
+        }
 }
 
 #[macro_export]
