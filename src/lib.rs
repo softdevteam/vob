@@ -1079,36 +1079,31 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterSetBits<'a, T> {
 
     fn next(&mut self) -> Option<usize> {
         debug_assert!(self.range.end <= self.vob.len);
-        if let Some(mut i) = self.range.next() {
-            // This is a long, but fast, way of finding out what the next set bit is. The basic
-            // idea is that we try and hit the fastest possible case (a block with all bits set)
-            // with minimal operations first, falling back to the general case only if we have to.
+        if let Some(i) = self.range.next() {
+            // This is a long, but fairly fast, way of finding out what the next set bit is. The
+            // basic problem is that we have no idea where the next set bit is -- but different
+            // patterns of set bits are most efficiently handled by different code paths. This code
+            // is thus a compromise: we prioritise two special cases (all bits set; all bits unset)
+            // for efficiency, and try and make the other possible cases reasonably fast.
             let mut b = block_offset::<T>(i);
             let mut v = self.vob.vec[b];
+            // If all bits are set, we don't need to do any complicated checks.
             if v == T::max_value() {
                 return Some(i);
             }
             // At this point we've got a block which might or might not have some bits set. We now
             // fall back to the general case.
+            let mut i_off = i % bits_per_block::<T>();
             loop {
-                // If this block doesn't have any bits set at all, we can zoom straight on to the
-                // next block.
-                if v != T::zero() {
-                    // We have a block with a bit set. Find the next bit set after 'i %
-                    // bits_per_block()', bearing in mind that it may have been the last bit set
-                    // (and we thus need to move to the next block).
-                    let i_off = i % bits_per_block::<T>();
-                    let tz = (v >> i_off).trailing_zeros() as usize;
-                    if tz < bits_per_block::<T>() {
-                        // There is another bit set after i in the block.
-                        let bs = b * bits_per_block::<T>() + i_off + tz;
-                        self.range.start = bs + 1;
-                        if bs >= self.range.end {
-                            return None;
-                        } else {
-                            return Some(bs);
-                        }
+                let tz = (v >> i_off).trailing_zeros() as usize;
+                if tz < bits_per_block::<T>() {
+                    // There is a bit set after i_off in the block.
+                    let bs = b * bits_per_block::<T>() + i_off + tz;
+                    self.range.start = bs + 1;
+                    if bs >= self.range.end {
+                        break;
                     }
+                    return Some(bs);
                 }
                 b += 1;
                 if b == blocks_required::<T>(self.range.end) {
@@ -1117,7 +1112,7 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterSetBits<'a, T> {
                     break;
                 }
                 v = self.vob.vec[b];
-                i = b * bits_per_block::<T>();
+                i_off = 0;
             }
         }
         None
@@ -1139,37 +1134,33 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterUnsetBits<'a, T> {
 
     fn next(&mut self) -> Option<usize> {
         debug_assert!(self.range.end <= self.vob.len);
-        if let Some(mut i) = self.range.next() {
-            // This is a long, but fast, way of finding out what the next unset bit is. The basic
-            // idea is that we try and hit the fastest possible case (a block with all bits unset)
-            // with minimal operations first, falling back to the general case only if we have to.
+        if let Some(i) = self.range.next() {
+            // This is a long, but fairly fast, way of finding out what the next usset bit is. The
+            // basic problem is that we have no idea where the next set bit is -- but different
+            // patterns of set bits are most efficiently handled by different code paths. This code
+            // is thus a compromise: we prioritise two special cases (all bits set; all bits unset)
+            // for efficiency, and try and make the other possible cases reasonably fast.
             let mut b = block_offset::<T>(i);
             let mut v = self.vob.vec[b];
+            // If no bits are set, we don't need to do any complicated checks.
             if v == T::zero() {
                 return Some(i);
             }
             // At this point we've got a block which might or might not have some bits unset. We
             // now fall back to the general case.
+            let mut i_off = i % bits_per_block::<T>();
             loop {
-                // If this block doesn't have any unset bits at all, we can zoom straight on to the
-                // next block.
-                if v != T::max_value() {
-                    // We have a block with a bit unset. Find the next bit unset after 'i %
-                    // bits_per_block()', bearing in mind that it may have been the last bit unset
-                    // (and we thus need to move to the next block).
-                    let i_off = i % bits_per_block::<T>();
-                    let tz = (!v >> i_off).trailing_zeros() as usize;
-                    if tz < bits_per_block::<T>() {
-                        // There is another bit unset after i in the block.
-                        let bs = b * bits_per_block::<T>() + i_off + tz;
-                        self.range.start = bs + 1;
-                        if bs >= self.range.end {
-                            // The unset bit is after the range we're looking for, so we've reached
-                            // the end of the iterator.
-                            break;
-                        }
-                        return Some(bs);
+                let tz = (!v >> i_off).trailing_zeros() as usize;
+                if tz < bits_per_block::<T>() {
+                    // There is another bit unset after i_off in the block.
+                    let bs = b * bits_per_block::<T>() + i_off + tz;
+                    self.range.start = bs + 1;
+                    if bs >= self.range.end {
+                        // The unset bit is after the range we're looking for, so we've reached
+                        // the end of the iterator.
+                        break;
                     }
+                    return Some(bs);
                 }
                 b += 1;
                 if b == blocks_required::<T>(self.range.end) {
@@ -1178,7 +1169,7 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterUnsetBits<'a, T> {
                     break;
                 }
                 v = self.vob.vec[b];
-                i = b * bits_per_block::<T>();
+                i_off = 0;
             }
         }
         None
