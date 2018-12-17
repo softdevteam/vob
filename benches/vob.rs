@@ -1,15 +1,17 @@
 #![feature(test)]
 
-#[macro_use]
-extern crate vob;
 extern crate rand;
+extern crate rand_pcg;
 extern crate test;
+extern crate vob;
 
-use rand::Rng;
+use rand::{Rng, SeedableRng};
+use rand_pcg::Pcg64Mcg;
 use test::Bencher;
 use vob::*;
 
 const N: usize = 100000;
+const RNG_SEED: u64 = 15770844968783748344;
 
 #[bench]
 fn empty(bench: &mut Bencher) {
@@ -66,7 +68,7 @@ fn split_off(bench: &mut Bencher) {
 #[bench]
 fn xor(bench: &mut Bencher) {
     let mut v1 = Vob::with_capacity(N);
-    let mut rng = rand::thread_rng();
+    let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
     v1.extend((0..N).map(|_| rng.gen::<bool>()));
     let mut v2 = Vob::with_capacity(N);
     v2.extend((0..N).map(|_| rng.gen::<bool>()));
@@ -79,7 +81,7 @@ fn xor(bench: &mut Bencher) {
 #[bench]
 fn or(bench: &mut Bencher) {
     let mut v1 = Vob::with_capacity(N);
-    let mut rng = rand::thread_rng();
+    let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
     v1.extend((0..N).map(|_| rng.gen::<bool>()));
     let mut v2 = Vob::with_capacity(N);
     v2.extend((0..N).map(|_| rng.gen::<bool>()));
@@ -92,7 +94,7 @@ fn or(bench: &mut Bencher) {
 #[bench]
 fn and(bench: &mut Bencher) {
     let mut v1 = Vob::with_capacity(N);
-    let mut rng = rand::thread_rng();
+    let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
     v1.extend((0..N).map(|_| rng.gen::<bool>()));
     let mut v2 = Vob::with_capacity(N);
     v2.extend((0..N).map(|_| rng.gen::<bool>()));
@@ -114,7 +116,7 @@ fn from_bytes(bench: &mut Bencher) {
 #[bench]
 fn iter_set_bits(bench: &mut Bencher) {
     let mut a = Vob::with_capacity(N);
-    let mut rng = rand::thread_rng();
+    let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
     a.extend((0..N).map(|_| rng.gen::<bool>()));
     bench.iter(|| a.iter_set_bits(..).count());
 }
@@ -122,7 +124,7 @@ fn iter_set_bits(bench: &mut Bencher) {
 #[bench]
 fn iter_set_bits_u8(bench: &mut Bencher) {
     let mut a = Vob::<u8>::new_with_storage_type(N);
-    let mut rng = rand::thread_rng();
+    let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
     a.extend((0..N).map(|_| rng.gen::<bool>()));
     bench.iter(|| a.iter_set_bits(..).count());
 }
