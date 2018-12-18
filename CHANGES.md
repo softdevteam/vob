@@ -1,3 +1,8 @@
+# vob 2.0.2 (2018-12-18)
+
+* Further speed up `iter_\[set|unset\]_bits` for cases where set/unset bits are
+  fairly randomly distributed (by approximately 10%).
+
 # vob 2.0.1 (2018-12-11)
 
 * Substantially speed up `iter_\[set|unset\]_bits` for the common case where all
