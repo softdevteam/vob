@@ -481,19 +481,19 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         }
     }
 
-    ///Returns contents of Vob as Vec of bytes.
+    /// Returns contents of Vob as Vec of bytes.
     ///
-    ///For a Vob of length n, the first bit will be the 0th element,
-    ///the last bit would be the (n-1)th element.
+    /// For a Vob of length n, the first bit will be the 0th element,
+    /// the last bit would be the (n-1)th element.
     ///
     /// # Examples
     /// ```
-    ///use vob::Vob;
-    ///let mut x = Vob::from_elem(5, false);
-    ///x.set(2, true);
-    ///x.set(4, true);
-    ///assert_eq!(x.to_bytes(), [0b00101000]);
-    ///```
+    /// use vob::Vob;
+    /// let mut x = Vob::from_elem(5, false);
+    /// x.set(2, true);
+    /// x.set(4, true);
+    /// assert_eq!(x.to_bytes(), [0b00101000]);
+    /// ```
     pub fn to_bytes(&self) -> Vec<u8> {
         fn bit<T: Debug + One + PrimInt + Zero>(vob: &Vob<T>, byte: usize, bit: usize) -> u8 {
             let offset = byte * 8 + bit;
@@ -504,18 +504,20 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
             }
         }
 
-        let len = self.len / 8 +
-                  if self.len % 8 == 0 { 0 } else { 1 };
-        (0..len).map(|i|
-            bit(self, i, 0) |
-            bit(self, i, 1) |
-            bit(self, i, 2) |
-            bit(self, i, 3) |
-            bit(self, i, 4) |
-            bit(self, i, 5) |
-            bit(self, i, 6) |
-            bit(self, i, 7)
-        ).collect()
+        let len = self.len / 8 + if self.len % 8 == 0 { 0 } else { 1 };
+        let x = (0..len)
+            .map(|i| {
+                bit(self, i, 0)
+                    | bit(self, i, 1)
+                    | bit(self, i, 2)
+                    | bit(self, i, 3)
+                    | bit(self, i, 4)
+                    | bit(self, i, 5)
+                    | bit(self, i, 6)
+                    | bit(self, i, 7)
+            })
+            .collect();
+        return x;
     }
 
     /// Returns an iterator over the slice.
@@ -1704,9 +1706,20 @@ mod tests {
         x.set(1, false);
         assert_eq!(x.to_bytes(), [0b10100000]);
     }
+    #[test]
+    fn to_bytes_empty() {
+        let x = Vob::new();
+        assert_eq!(x.to_bytes(), []);
+    }
+    #[test]
+    fn to_bytes_8() {
+        let mut x = Vob::from_elem(8, true);
+        x.set(1, false);
+        assert_eq!(x.to_bytes(), [0b10111111]);
+    }
 
     #[test]
-    fn to_bytes_larger(){
+    fn to_bytes_larger() {
         let mut x = Vob::from_elem(9, false);
         x.set(2, true);
         x.set(8, true);
