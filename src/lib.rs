@@ -783,7 +783,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
             let old_v = *self_blk;
             let new_v = old_v & *other_blk;
             *self_blk = new_v;
-            chngd = chngd | (old_v != new_v);
+            chngd |= old_v != new_v;
         }
         // We don't need to mask the last block as those bits can't be set by "&" by definition.
         chngd
@@ -819,7 +819,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
             let old_v = *self_blk;
             let new_v = old_v | *other_blk;
             *self_blk = new_v;
-            chngd = chngd | (old_v != new_v);
+            chngd |= old_v != new_v;
         }
         // We don't need to mask the last block per our assumptions
         chngd
@@ -855,7 +855,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
             let old_v = *self_blk;
             let new_v = old_v ^ *other_blk;
             *self_blk = new_v;
-            chngd = chngd | (old_v != new_v);
+            chngd |= old_v != new_v;
         }
         // We don't need to mask the last block per our assumptions
         chngd
