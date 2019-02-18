@@ -9,6 +9,7 @@ readme = "README.md"
 # UPL-1.0.
 license = "Apache-2.0 OR MIT"
 categories = ["data-structures"]
+edition = "2018"
 
 [build-dependencies]
 rustc_version = "0.2"

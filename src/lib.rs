@@ -13,13 +13,6 @@
 //!
 //! The main documentation for this crate can be found in the [`Vob`](struct.Vob.html) struct.
 
-extern crate num_traits;
-#[cfg(feature = "serde")]
-#[macro_use]
-extern crate serde;
-#[cfg(test)]
-extern crate rand;
-
 use std::{
     cmp::{min, PartialEq},
     fmt::{self, Debug},
@@ -31,6 +24,8 @@ use std::{
 };
 
 use num_traits::{One, PrimInt, Zero};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 // Whilst we wait for https://github.com/rust-lang/rust/issues/30877 to become stable, we can't use
 // RangeBounds and friends. We therefore have to implement a subset of the expected functionality
