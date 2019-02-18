@@ -1,9 +1,6 @@
 #![feature(test)]
 
-extern crate rand;
-extern crate rand_pcg;
 extern crate test;
-extern crate vob;
 
 use rand::{Rng, SeedableRng};
 use rand_pcg::Pcg64Mcg;

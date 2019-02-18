@@ -13,13 +13,6 @@
 //!
 //! The main documentation for this crate can be found in the [`Vob`](struct.Vob.html) struct.
 
-extern crate num_traits;
-#[cfg(feature = "serde")]
-#[macro_use]
-extern crate serde;
-#[cfg(test)]
-extern crate rand;
-
 use std::{
     cmp::{min, PartialEq},
     fmt::{self, Debug},
@@ -31,6 +24,8 @@ use std::{
 };
 
 use num_traits::{One, PrimInt, Zero};
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 // Whilst we wait for https://github.com/rust-lang/rust/issues/30877 to become stable, we can't use
 // RangeBounds and friends. We therefore have to implement a subset of the expected functionality
@@ -827,7 +822,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
             let old_v = *self_blk;
             let new_v = old_v & *other_blk;
             *self_blk = new_v;
-            chngd = chngd | (old_v != new_v);
+            chngd |= old_v != new_v;
         }
         // We don't need to mask the last block as those bits can't be set by "&" by definition.
         chngd
@@ -863,7 +858,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
             let old_v = *self_blk;
             let new_v = old_v | *other_blk;
             *self_blk = new_v;
-            chngd = chngd | (old_v != new_v);
+            chngd |= old_v != new_v;
         }
         // We don't need to mask the last block per our assumptions
         chngd
@@ -899,7 +894,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
             let old_v = *self_blk;
             let new_v = old_v ^ *other_blk;
             *self_blk = new_v;
-            chngd = chngd | (old_v != new_v);
+            chngd |= old_v != new_v;
         }
         // We don't need to mask the last block per our assumptions
         chngd
