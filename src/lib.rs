@@ -492,7 +492,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut v: Vec<u8> = Vec::new();
         for j in 0..self.vec.len() {
-            let mut current_block = self.vec[j];
+            let current_block = self.vec[j];
             let bytes_per_block = bytes_per_block::<T>();
             for i in (0..bytes_per_block).rev() {
                 let x = current_block
@@ -502,7 +502,20 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
                     .unwrap();
                 let y: u8 = num_traits::cast::cast(x >> 8 * (bytes_per_block - 1 - i)).unwrap();
                 if y != 0 {
-                    v.push(y.reverse_bits());
+                    #[cfg(not(reverse_bits))]
+                    {
+                        {
+                            let mut rb: u8 = 0; // the byte b with its bits in reverse order
+                            for k in 0..8 {
+                                rb |= ((y >> k) & 1) << (8 - k - 1);
+                            }
+                            v.push(rb);
+                        }
+                    }
+                    #[cfg(reverse_bits)]
+                    {
+                        v.push(y.reverse_bits());
+                    }
                 }
             }
         }
