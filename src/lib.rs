@@ -1557,7 +1557,7 @@ mod tests {
 
     #[test]
     fn test_eq() {
-        let v1 = Vob::<usize>::from_iter(vec![true, false]);
+        let v1 = Vob::from_iter(vec![true, false]);
         let v2 = Vob::from_iter(vec![true, false]);
         assert_eq!(v1, v2);
         let v3 = Vob::from_iter(vec![true, true]);
