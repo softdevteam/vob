@@ -1706,6 +1706,12 @@ mod tests {
     }
 
     #[test]
+    fn to_bytes_empty() {
+        let x = Vob::new();
+        assert_eq!(x.to_bytes(), []);
+    }
+
+    #[test]
     fn to_bytes_single_byte() {
         let x = Vob::from_elem(8, true);
         assert_eq!(x.to_bytes(), [255]);
@@ -1714,12 +1720,6 @@ mod tests {
     fn to_bytes_mutliple_words() {
         let x = Vob::from_elem(72, true);
         assert_eq!(x.to_bytes(), [255, 255, 255, 255, 255, 255, 255, 255, 255]);
-    }
-
-    #[test]
-    fn to_bytes_empty() {
-        let x = Vob::new();
-        assert_eq!(x.to_bytes(), []);
     }
 
 }
