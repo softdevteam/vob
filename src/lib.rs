@@ -1717,7 +1717,7 @@ mod tests {
         assert_eq!(x.to_bytes(), [255]);
     }
     #[test]
-    fn to_bytes_mutliple_words() {
+    fn to_bytes_multiple_words() {
         let x = Vob::from_elem(72, true);
         assert_eq!(x.to_bytes(), [255, 255, 255, 255, 255, 255, 255, 255, 255]);
     }
