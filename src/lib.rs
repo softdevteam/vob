@@ -491,19 +491,20 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// ```
     pub fn to_bytes(&self) -> Vec<u8> {
         let mut v: Vec<u8> = Vec::new();
-        for j in 0..self.vec.len() {
-            let current_block = self.vec[j];
-            let bytes_per_block = bytes_per_block::<T>();
-            for i in (0..bytes_per_block).rev() {
-                let x = current_block
+        for block in &self.vec {
+            let current_block = block;
+            for i in (0..bytes_per_block::<T>()).rev() {
+                let x = *current_block
                     & num_traits::cast::cast(
-                        255_u64.rotate_left(8 * (bytes_per_block - 1 - i) as u32),
+                        255_u64.rotate_left(8 * (bytes_per_block::<T>() - 1 - i) as u32),
                     )
                     .unwrap();
-                let y: u8 = num_traits::cast::cast(x >> 8 * (bytes_per_block - 1 - i)).unwrap();
-                if y != 0 {
-                    #[cfg(not(reverse_bits))]
-                    {
+                let y: u8 =
+                    num_traits::cast::cast(x >> 8 * (bytes_per_block::<T>() - 1 - i)).unwrap();
+
+                #[cfg(not(reverse_bits))]
+                {
+                    if y != 0 {
                         {
                             let mut rb: u8 = 0; // the byte b with its bits in reverse order
                             for k in 0..8 {
@@ -512,8 +513,10 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
                             v.push(rb);
                         }
                     }
-                    #[cfg(reverse_bits)]
-                    {
+                }
+                #[cfg(reverse_bits)]
+                {
+                    if y != 0 {
                         v.push(y.reverse_bits());
                     }
                 }
@@ -1703,41 +1706,20 @@ mod tests {
     }
 
     #[test]
-    fn to_bytes_1_byte_a() {
+    fn to_bytes_single_byte() {
         let x = Vob::from_elem(8, true);
         assert_eq!(x.to_bytes(), [255]);
     }
     #[test]
-    fn to_bytes_1_byte_b() {
-        let mut x = Vob::from_elem(8, true);
-        x.set(1, false);
-        assert_eq!(x.to_bytes(), [0b10111111]);
+    fn to_bytes_mutliple_words() {
+        let x = Vob::from_elem(72, true);
+        assert_eq!(x.to_bytes(), [255, 255, 255, 255, 255, 255, 255, 255, 255]);
     }
 
     #[test]
     fn to_bytes_empty() {
         let x = Vob::new();
         assert_eq!(x.to_bytes(), []);
-    }
-
-    #[test]
-    fn to_bytes_2_bytes() {
-        let mut x = Vob::from_elem(9, false);
-        x.set(2, true);
-        x.set(8, true);
-        assert_eq!(x.to_bytes(), [32, 128]);
-    }
-
-    #[test]
-    fn to_bytes_using_binary_a() {
-        let x = Vob::from_elem(1, true);
-        assert_eq!(x.to_bytes(), [0b10000000]);
-    }
-
-    #[test]
-    fn to_bytes_using_binary_b() {
-        let x = Vob::from_elem(0b00000001, true);
-        assert_eq!(x.to_bytes(), [0b10000000]);
     }
 
 }
