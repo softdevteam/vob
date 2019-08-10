@@ -1,4 +1,3 @@
-#![cfg_attr(nightly, feature(reverse_bits))]
 // Copyright (c) 2018 King's College London created by the Software Development Team
 // <http://soft-dev.org/>
 //
@@ -19,19 +18,16 @@ use std::{
     hash::{Hash, Hasher},
     iter::FromIterator,
     mem::{replace, size_of},
-    ops::{Index, Range},
+    ops::{
+        Bound::{Excluded, Included, Unbounded},
+        Index, Range, RangeBounds,
+    },
     slice,
 };
 
 use num_traits::{One, PrimInt, Zero};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
-
-// Whilst we wait for https://github.com/rust-lang/rust/issues/30877 to become stable, we can't use
-// RangeBounds and friends. We therefore have to implement a subset of the expected functionality
-// ourselves.
-mod range;
-use range::{Excluded, Included, RangeBounds, Unbounded};
 
 /// A Vob is a "vector of bits": a sequence of bits which exposes a `Vec`-like interface. Whereas
 /// `Vec<bool>` requires 1 byte of storage per bit, `Vob` requires only 1 bit of storage per bit.
