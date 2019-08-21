@@ -1,3 +1,10 @@
+# vob 2.0.3 (2019-08-21)
+
+* Port to Rust 2018.
+* Remove local copy of `Bounds` since it is now part of stable Rust.
+* On rustc-1.37 and later, automatically use `reverse_bits` (this automatically
+  includes the current nightly version of rustc).
+
 # vob 2.0.2 (2018-12-18)
 
 * Further speed up `iter_\[set|unset\]_bits` for cases where set/unset bits are
