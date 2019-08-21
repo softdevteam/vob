@@ -155,13 +155,10 @@ impl Vob<usize> {
     /// Create a Vob from a `u8` slice. The most significant bit of each byte comes first in the
     /// resulting Vob.
     ///
-    /// If you are running nightly, this method will use the new `reverse_bits` intrinsic.
-    ///
     /// # Examples
     ///
     /// ```
-    /// #[macro_use] extern crate vob;
-    /// use vob::Vob;
+    /// use vob::{Vob, vob};
     /// fn main() {
     ///     let v = Vob::from_bytes(&[0b10100000, 0b00010010]);
     ///     assert_eq!(v, vob![true, false, true, false, false, false, false, false,
@@ -281,7 +278,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     ///
     /// # Examples
     /// ```
-    /// #[macro_use] extern crate vob;
+    /// use vob::vob;
     /// fn main() {
     ///     let mut v = vob![true, false, true];
     ///     v.truncate(2);
@@ -621,12 +618,13 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     ///
     /// # Examples
     /// ```
-    /// #[macro_use] extern crate vob;
+    /// use vob::vob;
     /// fn main() {
     ///     let mut v = vob![true];
     ///     v.extend_from_slice(&vec![false, true]);
     ///     assert_eq!(v, vob![true, false, true]);
     /// }
+    /// ```
     pub fn extend_from_slice(&mut self, other: &[bool]) {
         for &blk in other.iter() {
             self.push(blk);
@@ -640,7 +638,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     ///
     /// # Examples
     /// ```
-    /// #[macro_use] extern crate vob;
+    /// use vob::vob;
     /// fn main() {
     ///     let mut v1 = vob![true];
     ///     let v2 = vob![false, false];
@@ -717,7 +715,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     ///
     /// # Examples
     /// ```
-    /// #[macro_use] extern crate vob;
+    /// use vob::vob;
     /// fn main() {
     ///     let mut v = vob![true, false, true];
     ///     v.set_all(false);
@@ -735,7 +733,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     ///
     /// # Examples
     /// ```
-    /// #[macro_use] extern crate vob;
+    /// use vob::vob;
     /// fn main() {
     ///     let mut v = vob![true, false];
     ///     v.negate();
@@ -759,7 +757,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     ///
     /// # Examples
     /// ```
-    /// #[macro_use] extern crate vob;
+    /// use vob::vob;
     /// fn main() {
     ///     let mut v1 = vob![true, false, false];
     ///     let v2 = vob![true, true, false];
@@ -795,7 +793,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     ///
     /// # Examples
     /// ```
-    /// #[macro_use] extern crate vob;
+    /// use vob::vob;
     /// fn main() {
     ///     let mut v1 = vob![true, false, false];
     ///     let v2 = vob![false, true, false];
@@ -831,7 +829,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     ///
     /// # Examples
     /// ```
-    /// #[macro_use] extern crate vob;
+    /// use vob::vob;
     /// fn main() {
     ///     let mut v1 = vob![true, false, true];
     ///     let v2 = vob![false, true, true];
@@ -910,7 +908,7 @@ impl<T> Vob<T> {
     ///
     /// # Examples
     /// ```
-    /// #[macro_use] extern crate vob;
+    /// use vob::vob;
     /// fn main() {
     ///     let mut v1 = vob![true, false, true];
     ///     let storage = unsafe { v1.get_storage_mut() };
@@ -934,7 +932,6 @@ impl<T> Vob<T> {
     ///
     /// # Examples
     /// ```
-    /// #[macro_use] extern crate vob;
     /// use vob::Vob;
     /// fn main() {
     ///     let mut v1 = Vob::<u8>::new_with_storage_type(9);
