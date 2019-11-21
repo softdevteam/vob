@@ -1,3 +1,8 @@
+# vob 2.0.4 (2019-11-21)
+
+* License as dual Apache-2.0/MIT (instead of a more complex, and little
+  understood, triple license of Apache-2.0/MIT/UPL-1.0).
+
 # vob 2.0.3 (2019-08-21)
 
 * Port to Rust 2018.
