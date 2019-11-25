@@ -1,3 +1,8 @@
+# vob X.X.X (YYYY-MM-DD)
+
+* Remove unnecessary ``fn main`` wrappers in doctest examples.
+* Clean up two remaining ``#[macro use] extern crate vob;`` lines from examples.
+
 # vob 2.0.4 (2019-11-21)
 
 * License as dual Apache-2.0/MIT (instead of a more complex, and little

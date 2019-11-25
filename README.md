@@ -17,7 +17,7 @@ are used.
 ## Usage
 
 ```rust
-#[macro_use] extern crate vob;
+use vob::vob;
 
 let mut v = vob![false, true, false];
 assert_eq!(v[2], false);

@@ -29,11 +29,9 @@ use serde::{Deserialize, Serialize};
 /// The `vob!` macro makes creating small `Vob`s easy:
 ///
 /// ```rust
-/// # #[macro_use] extern crate vob;
-/// # fn main() {
+/// use vob::vob;
 /// let mut v = vob![true, false, true];
 /// assert_eq!(v[1], false);
-/// # }
 /// ```
 ///
 /// Operations such as `and`ing two `Vob`s together are quick; one can also quickly identify which
@@ -150,11 +148,9 @@ impl Vob<usize> {
     ///
     /// ```
     /// use vob::{Vob, vob};
-    /// fn main() {
-    ///     let v = Vob::from_bytes(&[0b10100000, 0b00010010]);
-    ///     assert_eq!(v, vob![true, false, true, false, false, false, false, false,
-    ///                        false, false, false, true, false, false, true, false]);
-    /// }
+    /// let v = Vob::from_bytes(&[0b10100000, 0b00010010]);
+    /// assert_eq!(v, vob![true, false, true, false, false, false, false, false,
+    ///                    false, false, false, true, false, false, true, false]);
     /// ```
     pub fn from_bytes(slice: &[u8]) -> Vob<usize> {
         let new_len = slice.len().checked_mul(8).expect("Overflow detected");
@@ -270,11 +266,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::vob;
-    /// fn main() {
-    ///     let mut v = vob![true, false, true];
-    ///     v.truncate(2);
-    ///     assert_eq!(v, vob![true, false]);
-    /// }
+    /// let mut v = vob![true, false, true];
+    /// v.truncate(2);
+    /// assert_eq!(v, vob![true, false]);
     /// ```
     pub fn truncate(&mut self, len: usize) {
         if len > self.len {
@@ -610,11 +604,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::vob;
-    /// fn main() {
-    ///     let mut v = vob![true];
-    ///     v.extend_from_slice(&vec![false, true]);
-    ///     assert_eq!(v, vob![true, false, true]);
-    /// }
+    /// let mut v = vob![true];
+    /// v.extend_from_slice(&vec![false, true]);
+    /// assert_eq!(v, vob![true, false, true]);
     /// ```
     pub fn extend_from_slice(&mut self, other: &[bool]) {
         for &blk in other.iter() {
@@ -630,12 +622,10 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::vob;
-    /// fn main() {
-    ///     let mut v1 = vob![true];
-    ///     let v2 = vob![false, false];
-    ///     v1.extend_from_vob(&v2);
-    ///     assert_eq!(v1, vob![true, false, false]);
-    /// }
+    /// let mut v1 = vob![true];
+    /// let v2 = vob![false, false];
+    /// v1.extend_from_vob(&v2);
+    /// assert_eq!(v1, vob![true, false, false]);
     /// ```
     pub fn extend_from_vob(&mut self, other: &Vob<T>) {
         self.extend_blocks(other, 0);
@@ -707,11 +697,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::vob;
-    /// fn main() {
-    ///     let mut v = vob![true, false, true];
-    ///     v.set_all(false);
-    ///     assert_eq!(v, vob![false, false, false]);
-    /// }
+    /// let mut v = vob![true, false, true];
+    /// v.set_all(false);
+    /// assert_eq!(v, vob![false, false, false]);
     /// ```
     pub fn set_all(&mut self, value: bool) {
         for blk in self.vec.iter_mut() {
@@ -725,11 +713,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::vob;
-    /// fn main() {
-    ///     let mut v = vob![true, false];
-    ///     v.negate();
-    ///     assert_eq!(v, vob![false, true]);
-    /// }
+    /// let mut v = vob![true, false];
+    /// v.negate();
+    /// assert_eq!(v, vob![false, true]);
     /// ```
     pub fn negate(&mut self) {
         for blk in self.vec.iter_mut() {
@@ -749,12 +735,10 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::vob;
-    /// fn main() {
-    ///     let mut v1 = vob![true, false, false];
-    ///     let v2 = vob![true, true, false];
-    ///     assert_eq!(v1.and(&v2), false);
-    ///     assert_eq!(v1, vob![true, false, false]);
-    /// }
+    /// let mut v1 = vob![true, false, false];
+    /// let v2 = vob![true, true, false];
+    /// assert_eq!(v1.and(&v2), false);
+    /// assert_eq!(v1, vob![true, false, false]);
     /// ```
     pub fn and(&mut self, other: &Vob<T>) -> bool {
         if self.len != other.len {
@@ -785,12 +769,10 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::vob;
-    /// fn main() {
-    ///     let mut v1 = vob![true, false, false];
-    ///     let v2 = vob![false, true, false];
-    ///     assert_eq!(v1.or(&v2), true);
-    ///     assert_eq!(v1, vob![true, true, false]);
-    /// }
+    /// let mut v1 = vob![true, false, false];
+    /// let v2 = vob![false, true, false];
+    /// assert_eq!(v1.or(&v2), true);
+    /// assert_eq!(v1, vob![true, true, false]);
     /// ```
     pub fn or(&mut self, other: &Vob<T>) -> bool {
         if self.len != other.len {
@@ -821,12 +803,10 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::vob;
-    /// fn main() {
-    ///     let mut v1 = vob![true, false, true];
-    ///     let v2 = vob![false, true, true];
-    ///     assert_eq!(v1.xor(&v2), true);
-    ///     assert_eq!(v1, vob![true, true, false]);
-    /// }
+    /// let mut v1 = vob![true, false, true];
+    /// let v2 = vob![false, true, true];
+    /// assert_eq!(v1.xor(&v2), true);
+    /// assert_eq!(v1, vob![true, true, false]);
     /// ```
     pub fn xor(&mut self, other: &Vob<T>) -> bool {
         if self.len != other.len {
@@ -900,11 +880,9 @@ impl<T> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::vob;
-    /// fn main() {
-    ///     let mut v1 = vob![true, false, true];
-    ///     let storage = unsafe { v1.get_storage_mut() };
-    ///     assert_eq!(storage[0], 0b101);
-    /// }
+    /// let mut v1 = vob![true, false, true];
+    /// let storage = unsafe { v1.get_storage_mut() };
+    /// assert_eq!(storage[0], 0b101);
     /// ```
     pub unsafe fn get_storage_mut(&mut self) -> &mut Vec<T> {
         &mut self.vec
@@ -924,20 +902,18 @@ impl<T> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::Vob;
-    /// fn main() {
-    ///     let mut v1 = Vob::<u8>::new_with_storage_type(9);
-    ///     v1.push(true);
-    ///     v1.push(false);
-    ///     {
-    ///         let mut storage = unsafe { v1.get_storage_mut() };
-    ///         storage.push(0b1);
-    ///     }
-    ///     unsafe { v1.set_len(9); }
-    ///     assert_eq!(v1[0], true);
-    ///     assert_eq!(v1[1], false);
-    ///     assert_eq!(v1[2], false);
-    ///     assert_eq!(v1[8], true);
+    /// let mut v1 = Vob::<u8>::new_with_storage_type(9);
+    /// v1.push(true);
+    /// v1.push(false);
+    /// {
+    ///     let mut storage = unsafe { v1.get_storage_mut() };
+    ///     storage.push(0b1);
     /// }
+    /// unsafe { v1.set_len(9); }
+    /// assert_eq!(v1[0], true);
+    /// assert_eq!(v1[1], false);
+    /// assert_eq!(v1[2], false);
+    /// assert_eq!(v1[8], true);
     /// ```
     pub unsafe fn set_len(&mut self, len: usize) {
         self.len = len;
@@ -1229,17 +1205,14 @@ fn blocks_required<T>(num_bits: usize) -> usize {
 /// # Examples
 ///
 /// ```
-/// #[macro_use] extern crate vob;
-/// use vob::Vob;
+/// use vob::{vob, Vob};
 ///
-/// fn main() {
-///     let v1 = vob![true, false];
-///     let mut v2 = Vob::new();
-///     v2.push(true);
-///     v2.push(false);
-///     assert_eq!(v1, v2);
-///     println!("{:?}", vob![10; true]);
-/// }
+/// let v1 = vob![true, false];
+/// let mut v2 = Vob::new();
+/// v2.push(true);
+/// v2.push(false);
+/// assert_eq!(v1, v2);
+/// println!("{:?}", vob![10; true]);
 /// ```
 macro_rules! vob {
     (@single $($x:tt)*) => (());
