@@ -1296,12 +1296,12 @@ mod tests {
     fn test_reserve() {
         let mut v = Vob::new();
         v.reserve(10);
-        assert_eq!(v.capacity(), size_of::<usize>() * 8);
+        assert!(v.capacity() >= size_of::<usize>() * 8);
         v.reserve(10);
-        assert_eq!(v.capacity(), size_of::<usize>() * 8, "over-reserved");
+        assert!(v.capacity() >= size_of::<usize>() * 8, "over-reserved");
         v.push(true); // make sure there's less space than 64 still available
         v.reserve(size_of::<usize>() * 8);
-        assert_eq!(v.capacity(), size_of::<usize>() * 8 * 2);
+        assert!(v.capacity() >= size_of::<usize>() * 8 * 2);
     }
 
     #[test]
