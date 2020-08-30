@@ -132,11 +132,10 @@ impl Vob<usize> {
     /// assert_eq!(v.get(0), Some(true));
     /// ```
     pub fn from_elem(len: usize, value: bool) -> Vob<usize> {
-        let mut v = Vob::with_capacity(len);
-        for _ in 0..blocks_required::<usize>(len) {
-            v.vec.push(if value { !0 } else { 0 });
-        }
-        v.len = len;
+        let mut v = Vob {
+            len,
+            vec: vec![if value { !0 } else { 0 }; blocks_required::<usize>(len)],
+        };
         v.mask_last_block();
         v
     }
