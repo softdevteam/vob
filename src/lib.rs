@@ -670,7 +670,8 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         }
 
         // Compute new length for self.
-        let new_len = self.len
+        let new_len = self
+            .len
             //  the subtraction won't overflow because of the bounds assumption above.
             .checked_add(other.len() - block_offset * bits_per_block::<T>())
             .expect("Overflow detected");
