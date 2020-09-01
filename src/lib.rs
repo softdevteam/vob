@@ -132,11 +132,10 @@ impl Vob<usize> {
     /// assert_eq!(v.get(0), Some(true));
     /// ```
     pub fn from_elem(len: usize, value: bool) -> Vob<usize> {
-        let mut v = Vob::with_capacity(len);
-        for _ in 0..blocks_required::<usize>(len) {
-            v.vec.push(if value { !0 } else { 0 });
-        }
-        v.len = len;
+        let mut v = Vob {
+            len,
+            vec: vec![if value { !0 } else { 0 }; blocks_required::<usize>(len)],
+        };
         v.mask_last_block();
         v
     }
@@ -670,7 +669,8 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
         }
 
         // Compute new length for self.
-        let new_len = self.len
+        let new_len = self
+            .len
             //  the subtraction won't overflow because of the bounds assumption above.
             .checked_add(other.len() - block_offset * bits_per_block::<T>())
             .expect("Overflow detected");
