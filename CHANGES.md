@@ -1,5 +1,6 @@
-# vob X.X.X (YYYY-MM-DD)
+# vob 2.0.5 (2020-09-02)
 
+* Use rustfmt stable.
 * Remove unnecessary ``fn main`` wrappers in doctest examples.
 * Clean up two remaining ``#[macro use] extern crate vob;`` lines from examples.
 
