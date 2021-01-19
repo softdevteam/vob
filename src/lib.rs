@@ -872,10 +872,10 @@ impl<T> Vob<T> {
     /// # Assumptions:
     ///
     /// * `Vob` stores the bits in a little-endian order.
-    /// * The length can't change, or should be updated using `Vob::set_len()`.
-    /// * Any bits past `self.len()` should be set to 0 in the last block.
+    /// * The length can't change, or must be updated using `Vob::set_len()`.
+    /// * Any bits past `self.len()` must be set to 0 in the last block.
     ///   `Vob::mask_last_block()` can help you with that.
-    /// * `storage.len()` may not be larger than `ceil(self.len() / (8 * size_of::<T>))`
+    /// * `storage.len()` can not be larger than `ceil(self.len() / (8 * size_of::<T>))`
     ///
     /// # Examples
     /// ```
@@ -886,6 +886,21 @@ impl<T> Vob<T> {
     /// ```
     pub unsafe fn get_storage_mut(&mut self) -> &mut Vec<T> {
         &mut self.vec
+    }
+
+    /// Get a reference to the underlying data structure
+    ///
+    /// `Vob` stores the bits in little-endian order. Any bits beyond `self.len()` in the last
+    /// block are `0`.
+    ///
+    /// ```
+    /// use vob::vob;
+    /// let v1 = vob![true, true, false];
+    /// let storage = unsafe { v1.get_storage() };
+    /// assert_eq!(storage[0], 0b011);
+    /// ```
+    pub fn get_storage(&self) -> &[T] {
+        self.vec.as_ref()
     }
 
     /// Set the length of the `Vob`.
@@ -907,8 +922,10 @@ impl<T> Vob<T> {
     /// v1.push(false);
     /// {
     ///     let mut storage = unsafe { v1.get_storage_mut() };
+    ///     // push another block
     ///     storage.push(0b1);
     /// }
+    /// // we know that 9 bits are initialised now as the previously-unused remainder of block 0 must be zero.
     /// unsafe { v1.set_len(9); }
     /// assert_eq!(v1[0], true);
     /// assert_eq!(v1[1], false);
