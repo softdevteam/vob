@@ -1,3 +1,9 @@
+# vob 2.0.6 (2021-01-25)
+
+* Add `get_storage` to the `unsafe_internals` portion of the API.
+* Clearly document the invariants users must maintain when using the `unsafe`
+  parts of the API.
+
 # vob 2.0.5 (2020-09-02)
 
 * Use rustfmt stable.
