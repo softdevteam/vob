@@ -39,8 +39,8 @@ use serde::{Deserialize, Serialize};
 ///
 /// ```rust
 /// use vob::Vob;
-/// let mut v1 = Vob::from_elem(256, false);
-/// let mut v2 = Vob::from_elem(256, false);
+/// let mut v1 = Vob::from_elem(false, 256);
+/// let mut v2 = Vob::from_elem(false, 256);
 /// v1.set(67, true);
 /// v2.set(67, true);
 /// v1.set(188, true);
@@ -127,11 +127,11 @@ impl Vob<usize> {
     /// # Examples
     /// ```
     /// use vob::Vob;
-    /// let v = Vob::from_elem(2, true);
+    /// let v = Vob::from_elem(true, 2);
     /// assert_eq!(v.len(), 2);
     /// assert_eq!(v.get(0), Some(true));
     /// ```
-    pub fn from_elem(len: usize, value: bool) -> Vob<usize> {
+    pub fn from_elem(value: bool, len: usize) -> Vob<usize> {
         let mut v = Vob {
             len,
             vec: vec![if value { !0 } else { 0 }; blocks_required::<usize>(len)],
@@ -331,7 +331,7 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::Vob;
-    /// assert_eq!(Vob::from_elem(2, true).is_empty(), false);
+    /// assert_eq!(Vob::from_elem(true, 2).is_empty(), false);
     /// assert_eq!(Vob::new().is_empty(), true);
     /// ```
     pub fn is_empty(&self) -> bool {
@@ -352,8 +352,8 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// v1.push(true);
     /// v1.push(false);
     /// let v2 = v1.split_off(1);
-    /// assert_eq!(v1, Vob::from_elem(1, true));
-    /// assert_eq!(v2, Vob::from_elem(1, false));
+    /// assert_eq!(v1, Vob::from_elem(true, 1));
+    /// assert_eq!(v2, Vob::from_elem(false, 1));
     /// ```
     pub fn split_off(&mut self, at: usize) -> Vob<T> {
         debug_assert_eq!(self.vec.len(), blocks_required::<T>(self.len));
@@ -545,9 +545,9 @@ impl<T: Debug + PrimInt + One + Zero> Vob<T> {
     /// # Examples
     /// ```
     /// use vob::Vob;
-    /// let v1 = Vob::from_elem(10, true);
+    /// let v1 = Vob::from_elem(true, 10);
     /// assert_eq!(v1.iter_storage().next(), Some((1 << 10) - 1));
-    /// let v2 = Vob::from_elem(129, true);
+    /// let v2 = Vob::from_elem(true, 129);
     /// assert_eq!(v2.iter_storage().last(), Some(1));
     /// ```
     pub fn iter_storage(&self) -> StorageIter<T> {
@@ -1238,7 +1238,7 @@ macro_rules! vob {
     ($($rest:expr),+,) => ( vob!($($rest),+) );
     (@count $($rest:expr),*) => (<[()]>::len(&[$(vob!(@single $rest)),*]));
     ($elem:expr; $n:expr) => (
-        $crate::Vob::from_elem($elem, $n)
+        $crate::Vob::from_elem($n, $elem)
     );
     () => (Vob::new());
     ($($x:expr),*) => ({
@@ -1393,12 +1393,12 @@ mod tests {
 
     #[test]
     fn test_truncate() {
-        let mut v = Vob::from_elem(2 * size_of::<usize>() * 8 + 1, true);
-        assert_eq!(v, Vob::from_elem(2 * size_of::<usize>() * 8 + 1, true));
+        let mut v = Vob::from_elem(true, 2 * size_of::<usize>() * 8 + 1);
+        assert_eq!(v, Vob::from_elem(true, 2 * size_of::<usize>() * 8 + 1));
         v.truncate(2 * size_of::<usize>() * 8 + 1);
-        assert_eq!(v, Vob::from_elem(2 * size_of::<usize>() * 8 + 1, true));
+        assert_eq!(v, Vob::from_elem(true, 2 * size_of::<usize>() * 8 + 1));
         v.truncate(3 * size_of::<usize>() * 8 + 1);
-        assert_eq!(v, Vob::from_elem(2 * size_of::<usize>() * 8 + 1, true));
+        assert_eq!(v, Vob::from_elem(true, 2 * size_of::<usize>() * 8 + 1));
         v.truncate(0);
         assert_eq!(v, Vob::new());
     }
