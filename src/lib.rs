@@ -1229,7 +1229,7 @@ fn blocks_required<T>(num_bits: usize) -> usize {
 /// v2.push(true);
 /// v2.push(false);
 /// assert_eq!(v1, v2);
-/// println!("{:?}", vob![10; true]);
+/// println!("{:?}", vob![true; 10]);
 /// ```
 macro_rules! vob {
     (@single $($x:tt)*) => (());
@@ -1237,7 +1237,7 @@ macro_rules! vob {
     // (macro_at_most_once_rep) stabilises
     ($($rest:expr),+,) => ( vob!($($rest),+) );
     (@count $($rest:expr),*) => (<[()]>::len(&[$(vob!(@single $rest)),*]));
-    ($elem:expr; $n:expr) => (
+    ($n:expr; $elem:expr) => (
         $crate::Vob::from_elem($n, $elem)
     );
     () => (Vob::new());
@@ -1563,8 +1563,8 @@ mod tests {
         v2.push(false);
         assert_eq!(v1, v2);
         v2.set(1, true);
-        assert_eq!(v2, vob![2; true]);
-        assert_ne!(v2, vob![2; false]);
+        assert_eq!(v2, vob![true; 2]);
+        assert_ne!(v2, vob![false; 2]);
     }
 
     fn random_vob(len: usize) -> Vob {
