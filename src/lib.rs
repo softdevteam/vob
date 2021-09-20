@@ -1237,8 +1237,8 @@ macro_rules! vob {
     // (macro_at_most_once_rep) stabilises
     ($($rest:expr),+,) => ( vob!($($rest),+) );
     (@count $($rest:expr),*) => (<[()]>::len(&[$(vob!(@single $rest)),*]));
-    ($n:expr; $elem:expr) => (
-        $crate::Vob::from_elem($n, $elem)
+    ($val:expr; $len:expr) => (
+        $crate::Vob::from_elem($val, $len)
     );
     () => (Vob::new());
     ($($x:expr),*) => ({
