@@ -1,3 +1,15 @@
+# vob 3.0.0 (2021-09-20)
+
+## Breaking changes
+
+* `Vob::from_elem(value: bool, len: usize)` now takes the value first and the
+  number of repetitions of that value second to mirror the most common way this
+  function is defined elsewhere.
+
+* The `vob!` macro's repetition form now mirrors `vec!`, so `vob![val; len]` is
+  equivalent to `Vec::from_elem(val, len)`.
+
+
 # vob 2.0.6 (2021-01-25)
 
 * Add `get_storage` to the `unsafe_internals` portion of the API.
