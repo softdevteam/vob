@@ -44,7 +44,7 @@ index works (though via a hack identical to that used in `BitVec`): one can writ
 ## Migrating from `BitVec`
 
 `Vob` is directly inspired by the [`BitVec`](https://crates.io/crates/bit-vec) crate, but
-aims to provide an interface more closely aligned to `Vec<bool>` Several functions in
+aims to provide an interface more closely aligned to `Vec<bool>`. Several functions in
 `BitVec` have different names in `Vob`, but porting is in general fairly simple. The main
 semantic difference is that `Vob`s `clear()` function empties the `Vob` of contents
 (i.e. sets its length to 0), whereas `BitVec`'s function of the same name unsets all bits
