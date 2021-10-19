@@ -1318,7 +1318,7 @@ mod tests {
         let mut v = Vob::new();
         v.push(true);
         v.push(true);
-        v.reserve(usize::max_value());
+        v.reserve(usize::MAX);
     }
 
     #[test]
