@@ -1242,6 +1242,225 @@ macro_rules! vob {
     });
 }
 
+impl<T: Debug + PrimInt + One + Zero> std::ops::BitOrAssign<&Vob<T>> for Vob<T> {
+    /// For each bit in this Vob, `or` it with the corresponding bit in `other`.
+    /// Store the result in `self`.
+    /// The two Vobs must have the same number of bits.
+    ///
+    /// # Panics
+    ///
+    /// If the two Vobs are of different length.
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::vob;
+    /// let mut v1 = vob![true, false, true, false];
+    /// let v2 = vob![true, true, false, false];
+    /// v1 |= &v2;
+    /// assert_eq!(v1, vob![true, true, true, false]);
+    /// ```
+    #[inline(always)]
+    fn bitor_assign(&mut self, other: &Self) {
+        let _ = self.or(other);
+    }
+}
+
+impl<T: Debug + PrimInt + One + Zero> std::ops::BitOr<&Vob<T>> for &Vob<T> {
+    type Output = Vob<T>;
+    /// For each bit in this Vob, `or` it with the corresponding bit in `other`.
+    /// Store the result in clone of `self`.
+    /// The two Vobs must have the same number of bits.
+    ///
+    /// # Panics
+    ///
+    /// If the two Vobs are of different length.
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::vob;
+    /// let v1 = vob![true, false, true, false];
+    /// let v2 = vob![true, true, false, false];
+    /// let v3 = &v1 | &v2;
+    /// assert_eq!(v3, vob![true, true, true, false]);
+    /// ```
+    #[inline(always)]
+    fn bitor(self, other: &Vob<T>) -> Vob<T> {
+        let mut rv = self.clone();
+        let _ = rv.or(other);
+        rv
+    }
+}
+
+impl<T: Debug + PrimInt + One + Zero> std::ops::BitOr<&Vob<T>> for Vob<T> {
+    type Output = Self;
+    /// For each bit in this Vob, `or` it with the corresponding bit in `other`.
+    /// Store the result in the moved and returned `self`.
+    /// The two Vobs must have the same number of bits.
+    ///
+    /// # Panics
+    ///
+    /// If the two Vobs are of different length.
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::vob;
+    /// let v1 = vob![true, false, true, false];
+    /// let v2 = vob![true, true, false, false];
+    /// let v3 = v1 | &v2; // v1 is moved, but reused as v3
+    /// assert_eq!(v3, vob![true, true, true, false]);
+    /// ```
+    #[inline(always)]
+    fn bitor(mut self, other: &Self) -> Self {
+        let _ = self.or(other);
+        self
+    }
+}
+
+impl<T: Debug + PrimInt + One + Zero> std::ops::BitAndAssign<&Vob<T>> for Vob<T> {
+    /// For each bit in this Vob, `and` it with the corresponding bit in `other`.
+    /// Store the result in `self`.
+    /// The two Vobs must have the same number of bits.
+    ///
+    /// # Panics
+    ///
+    /// If the two Vobs are of different length.
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::vob;
+    /// let mut v1 = vob![true, false, true, false];
+    /// let v2 = vob![true, true, false, false];
+    /// v1 &= &v2;
+    /// assert_eq!(v1, vob![true, false, false, false]);
+    #[inline(always)]
+    fn bitand_assign(&mut self, other: &Self) {
+        let _ = self.and(other);
+    }
+}
+
+impl<T: Debug + PrimInt + One + Zero> std::ops::BitAnd<&Vob<T>> for &Vob<T> {
+    type Output = Vob<T>;
+    /// For each bit in this Vob, `and` it with the corresponding bit in `other`.
+    /// Store the result in a clone of `self`.
+    /// The two Vobs must have the same number of bits.
+    ///
+    /// # Panics
+    ///
+    /// If the two Vobs are of different length.
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::vob;
+    /// let v1 = vob![true, false, true, false];
+    /// let v2 = vob![true, true, false, false];
+    /// let v3 = &v1 & &v2;
+    /// assert_eq!(v3, vob![true, false, false, false]);
+    #[inline(always)]
+    fn bitand(self, other: &Vob<T>) -> Vob<T> {
+        let mut rv = self.clone();
+        let _ = rv.and(other);
+        rv
+    }
+}
+
+impl<T: Debug + PrimInt + One + Zero> std::ops::BitAnd<&Vob<T>> for Vob<T> {
+    type Output = Self;
+    /// For each bit in this Vob, `and` it with the corresponding bit in `other`.
+    /// Store the result in the moved and returned `self`.
+    /// The two Vobs must have the same number of bits.
+    ///
+    /// # Panics
+    ///
+    /// If the two Vobs are of different length.
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::vob;
+    /// let v1 = vob![true, false, true, false];
+    /// let v2 = vob![true, true, false, false];
+    /// let v3 = v1 & &v2; // v1 is moved, but reused as v3
+    /// assert_eq!(v3, vob![true, false, false, false]);
+    #[inline(always)]
+    fn bitand(mut self, other: &Self) -> Self {
+        let _ = self.and(other);
+        self
+    }
+}
+
+impl<T: Debug + PrimInt + One + Zero> std::ops::BitXorAssign<&Vob<T>> for Vob<T> {
+    /// For each bit in this Vob, `xor` it with the corresponding bit in `other`.
+    /// Store the result in `self`.
+    /// The two Vobs must have the same number of bits.
+    ///
+    /// # Panics
+    ///
+    /// If the two Vobs are of different length.
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::vob;
+    /// let mut v1 = vob![true, true, false, true];
+    /// let v2 = vob![true, false, true, true];
+    /// v1 ^= &v2;
+    /// assert_eq!(v1, vob![false, true, true, false]);
+    /// ```
+    #[inline(always)]
+    fn bitxor_assign(&mut self, other: &Self) {
+        let _ = self.xor(other);
+    }
+}
+
+impl<T: Debug + PrimInt + One + Zero> std::ops::BitXor<&Vob<T>> for &Vob<T> {
+    type Output = Vob<T>;
+    /// For each bit in this Vob, `xor` it with the corresponding bit in `other`.
+    /// Store the result in a clone of `self`.
+    /// The two Vobs must have the same number of bits.
+    ///
+    /// # Panics
+    ///
+    /// If the two Vobs are of different length.
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::vob;
+    /// let v1 = vob![true, true, false, true];
+    /// let v2 = vob![true, false, true, true];
+    /// let v3 = &v1 ^ &v2;
+    /// assert_eq!(v3, vob![false, true, true, false]);
+    /// ```
+    #[inline(always)]
+    fn bitxor(self, other: &Vob<T>) -> Vob<T> {
+        let mut rv = self.clone();
+        let _ = rv.xor(other);
+        rv
+    }
+}
+
+impl<T: Debug + PrimInt + One + Zero> std::ops::BitXor<&Vob<T>> for Vob<T> {
+    type Output = Self;
+    /// For each bit in this Vob, `xor` it with the corresponding bit in `other`.
+    /// Store the result in the moved and returned `self`.
+    /// The two Vobs must have the same number of bits.
+    ///
+    /// # Panics
+    ///
+    /// If the two Vobs are of different length.
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::vob;
+    /// let v1 = vob![true, true, false, true];
+    /// let v2 = vob![true, false, true, true];
+    /// let v3 = v1 ^ &v2; // v1 is moved, but reused as v3
+    /// assert_eq!(v3, vob![false, true, true, false]);
+    /// ```
+    #[inline(always)]
+    fn bitxor(mut self, other: &Self) -> Self {
+        let _ = self.xor(other);
+        self
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{block_offset, blocks_required, Vob};
