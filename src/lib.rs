@@ -87,7 +87,7 @@ use serde::{Deserialize, Serialize};
 /// (i.e. sets its length to 0), whereas `BitVec`'s function of the same name unsets all bits
 /// (keeping the length unchanged). The same effect as `BitVec`'s `clear` can be achieved by using
 /// `Vob`'s [`set_all(false)`](struct.Vob.html#method.set_all) function.
-#[derive(Clone)]
+#[derive(Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Vob<T = usize> {
     /// How many bits are stored in this Vob?
@@ -934,15 +934,6 @@ impl<T> Vob<T> {
     /// ```
     pub unsafe fn set_len(&mut self, len: usize) {
         self.len = len;
-    }
-}
-
-impl Default for Vob<usize> {
-    fn default() -> Self {
-        Vob {
-            len: 0,
-            vec: Vec::new(),
-        }
     }
 }
 
