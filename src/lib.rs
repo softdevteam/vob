@@ -16,7 +16,7 @@ use std::{
     slice,
 };
 
-use num_traits::{One, PrimInt, Zero};
+use num_traits::{PrimInt, Zero};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -189,7 +189,7 @@ impl Vob<usize> {
     }
 }
 
-impl<T: Debug + PrimInt + One + Zero> Vob<T> {
+impl<T: Debug + PrimInt> Vob<T> {
     /// Constructs a new, empty Vob (with a user-defined backing storage type) with the given
     /// capacity.
     ///
@@ -937,7 +937,7 @@ impl<T> Vob<T> {
     }
 }
 
-impl<T: Debug + One + PrimInt + Zero> Debug for Vob<T> {
+impl<T: Debug + PrimInt> Debug for Vob<T> {
     fn fmt(&self, fmt: &mut fmt::Formatter) -> fmt::Result {
         write!(fmt, "Vob[")?;
         for blk in self {
@@ -948,7 +948,7 @@ impl<T: Debug + One + PrimInt + Zero> Debug for Vob<T> {
     }
 }
 
-impl<T: Debug + One + PrimInt + Zero> Extend<bool> for Vob<T> {
+impl<T: Debug + PrimInt> Extend<bool> for Vob<T> {
     fn extend<I: IntoIterator<Item = bool>>(&mut self, iterable: I) {
         let iterator = iterable.into_iter();
         let (min, _) = iterator.size_hint();
@@ -981,7 +981,7 @@ impl FromIterator<bool> for Vob<usize> {
 static TRUE: bool = true;
 static FALSE: bool = false;
 
-impl<T: Debug + One + PrimInt + Zero> Index<usize> for Vob<T> {
+impl<T: Debug + PrimInt> Index<usize> for Vob<T> {
     type Output = bool;
 
     fn index(&self, index: usize) -> &bool {
@@ -1002,7 +1002,7 @@ pub struct Iter<'a, T: 'a> {
     range: Range<usize>,
 }
 
-impl<'a, T: Debug + One + PrimInt + Zero> Iterator for Iter<'a, T> {
+impl<'a, T: Debug + PrimInt> Iterator for Iter<'a, T> {
     type Item = bool;
 
     fn next(&mut self) -> Option<bool> {
@@ -1014,15 +1014,15 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for Iter<'a, T> {
     }
 }
 
-impl<'a, T: Debug + One + PrimInt + Zero> DoubleEndedIterator for Iter<'a, T> {
+impl<'a, T: Debug + PrimInt> DoubleEndedIterator for Iter<'a, T> {
     fn next_back(&mut self) -> Option<bool> {
         self.range.next_back().map(|i| self.vob.get(i).unwrap())
     }
 }
 
-impl<'a, T: Debug + One + PrimInt + Zero> ExactSizeIterator for Iter<'a, T> {}
+impl<'a, T: Debug + PrimInt> ExactSizeIterator for Iter<'a, T> {}
 
-impl<'a, T: Debug + One + PrimInt + Zero> IntoIterator for &'a Vob<T> {
+impl<'a, T: Debug + PrimInt> IntoIterator for &'a Vob<T> {
     type Item = bool;
     type IntoIter = Iter<'a, T>;
 
@@ -1037,7 +1037,7 @@ pub struct IterSetBits<'a, T: 'a> {
     range: Range<usize>,
 }
 
-impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterSetBits<'a, T> {
+impl<'a, T: Debug + PrimInt> Iterator for IterSetBits<'a, T> {
     type Item = usize;
 
     fn next(&mut self) -> Option<usize> {
@@ -1092,7 +1092,7 @@ pub struct IterUnsetBits<'a, T: 'a> {
     range: Range<usize>,
 }
 
-impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterUnsetBits<'a, T> {
+impl<'a, T: Debug + PrimInt> Iterator for IterUnsetBits<'a, T> {
     type Item = usize;
 
     fn next(&mut self) -> Option<usize> {
@@ -1143,7 +1143,7 @@ impl<'a, T: Debug + One + PrimInt + Zero> Iterator for IterUnsetBits<'a, T> {
     }
 }
 
-impl<T: Debug + One + PrimInt + Zero> PartialEq for Vob<T> {
+impl<T: Debug + PrimInt> PartialEq for Vob<T> {
     fn eq(&self, other: &Self) -> bool {
         if self.len != other.len {
             return false;
@@ -1154,9 +1154,9 @@ impl<T: Debug + One + PrimInt + Zero> PartialEq for Vob<T> {
     }
 }
 
-impl<T: Debug + One + PrimInt + Zero> Eq for Vob<T> {}
+impl<T: Debug + PrimInt> Eq for Vob<T> {}
 
-impl<T: Debug + Hash + One + PrimInt + Zero> Hash for Vob<T> {
+impl<T: Debug + Hash + PrimInt> Hash for Vob<T> {
     fn hash<H: Hasher>(&self, state: &mut H) {
         for blk in self.iter_storage() {
             blk.hash(state);
@@ -1169,7 +1169,7 @@ pub struct StorageIter<'a, B: 'a> {
     iter: slice::Iter<'a, B>,
 }
 
-impl<'a, T: Debug + One + PrimInt + Zero> Iterator for StorageIter<'a, T> {
+impl<'a, T: Debug + PrimInt> Iterator for StorageIter<'a, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<T> {
@@ -1242,7 +1242,7 @@ macro_rules! vob {
     });
 }
 
-impl<T: Debug + PrimInt + One + Zero> std::ops::BitOrAssign<&Vob<T>> for Vob<T> {
+impl<T: Debug + PrimInt> std::ops::BitOrAssign<&Vob<T>> for Vob<T> {
     /// For each bit in this Vob, `or` it with the corresponding bit in `other`.
     /// Store the result in `self`.
     /// The two Vobs must have the same number of bits.
@@ -1265,7 +1265,7 @@ impl<T: Debug + PrimInt + One + Zero> std::ops::BitOrAssign<&Vob<T>> for Vob<T> 
     }
 }
 
-impl<T: Debug + PrimInt + One + Zero> std::ops::BitOr<&Vob<T>> for &Vob<T> {
+impl<T: Debug + PrimInt> std::ops::BitOr<&Vob<T>> for &Vob<T> {
     type Output = Vob<T>;
     /// For each bit in this Vob, `or` it with the corresponding bit in `other`.
     /// Store the result in clone of `self`.
@@ -1291,7 +1291,7 @@ impl<T: Debug + PrimInt + One + Zero> std::ops::BitOr<&Vob<T>> for &Vob<T> {
     }
 }
 
-impl<T: Debug + PrimInt + One + Zero> std::ops::BitOr<&Vob<T>> for Vob<T> {
+impl<T: Debug + PrimInt> std::ops::BitOr<&Vob<T>> for Vob<T> {
     type Output = Self;
     /// For each bit in this Vob, `or` it with the corresponding bit in `other`.
     /// Store the result in the moved and returned `self`.
@@ -1316,7 +1316,7 @@ impl<T: Debug + PrimInt + One + Zero> std::ops::BitOr<&Vob<T>> for Vob<T> {
     }
 }
 
-impl<T: Debug + PrimInt + One + Zero> std::ops::BitAndAssign<&Vob<T>> for Vob<T> {
+impl<T: Debug + PrimInt> std::ops::BitAndAssign<&Vob<T>> for Vob<T> {
     /// For each bit in this Vob, `and` it with the corresponding bit in `other`.
     /// Store the result in `self`.
     /// The two Vobs must have the same number of bits.
@@ -1338,7 +1338,7 @@ impl<T: Debug + PrimInt + One + Zero> std::ops::BitAndAssign<&Vob<T>> for Vob<T>
     }
 }
 
-impl<T: Debug + PrimInt + One + Zero> std::ops::BitAnd<&Vob<T>> for &Vob<T> {
+impl<T: Debug + PrimInt> std::ops::BitAnd<&Vob<T>> for &Vob<T> {
     type Output = Vob<T>;
     /// For each bit in this Vob, `and` it with the corresponding bit in `other`.
     /// Store the result in a clone of `self`.
@@ -1363,7 +1363,7 @@ impl<T: Debug + PrimInt + One + Zero> std::ops::BitAnd<&Vob<T>> for &Vob<T> {
     }
 }
 
-impl<T: Debug + PrimInt + One + Zero> std::ops::BitAnd<&Vob<T>> for Vob<T> {
+impl<T: Debug + PrimInt> std::ops::BitAnd<&Vob<T>> for Vob<T> {
     type Output = Self;
     /// For each bit in this Vob, `and` it with the corresponding bit in `other`.
     /// Store the result in the moved and returned `self`.
@@ -1387,7 +1387,7 @@ impl<T: Debug + PrimInt + One + Zero> std::ops::BitAnd<&Vob<T>> for Vob<T> {
     }
 }
 
-impl<T: Debug + PrimInt + One + Zero> std::ops::BitXorAssign<&Vob<T>> for Vob<T> {
+impl<T: Debug + PrimInt> std::ops::BitXorAssign<&Vob<T>> for Vob<T> {
     /// For each bit in this Vob, `xor` it with the corresponding bit in `other`.
     /// Store the result in `self`.
     /// The two Vobs must have the same number of bits.
@@ -1410,7 +1410,7 @@ impl<T: Debug + PrimInt + One + Zero> std::ops::BitXorAssign<&Vob<T>> for Vob<T>
     }
 }
 
-impl<T: Debug + PrimInt + One + Zero> std::ops::BitXor<&Vob<T>> for &Vob<T> {
+impl<T: Debug + PrimInt> std::ops::BitXor<&Vob<T>> for &Vob<T> {
     type Output = Vob<T>;
     /// For each bit in this Vob, `xor` it with the corresponding bit in `other`.
     /// Store the result in a clone of `self`.
@@ -1436,7 +1436,7 @@ impl<T: Debug + PrimInt + One + Zero> std::ops::BitXor<&Vob<T>> for &Vob<T> {
     }
 }
 
-impl<T: Debug + PrimInt + One + Zero> std::ops::BitXor<&Vob<T>> for Vob<T> {
+impl<T: Debug + PrimInt> std::ops::BitXor<&Vob<T>> for Vob<T> {
     type Output = Self;
     /// For each bit in this Vob, `xor` it with the corresponding bit in `other`.
     /// Store the result in the moved and returned `self`.
