@@ -1,3 +1,10 @@
+# vob 3.0.1 (2021-10-22)
+
+* Implement `std::ops::{BitOrAssign, BitOr, BitAndAssign, BitAnd, BitXorAssign,
+  BitXor}`. Note that, as with `Vob`'s other bit-wise operations, these will
+  panic if the two `Vob`s in question are not of equal length.
+
+
 # vob 3.0.0 (2021-09-20)
 
 ## Breaking changes
