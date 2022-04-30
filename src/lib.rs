@@ -1334,10 +1334,10 @@ mod tests {
     }
 
     #[test]
-    #[should_panic]
+    #[should_panic(expected = "Index out of bounds")]
     fn test_set_beyond_a_word() {
         let mut v = vob![true];
-        assert!(v.set(0, false), true);
+        assert_eq!(v.set(0, false), true);
         v.set(1, true);
     }
 
