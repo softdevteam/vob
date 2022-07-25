@@ -1,3 +1,8 @@
+# vob 3.0.3 (2022-07-25)
+
+* Add `from_elem_with_storage_type` as a dual of `new_with_storage_type`.
+
+
 # vob 3.0.1 (2021-10-22)
 
 * Implement `std::ops::{BitOrAssign, BitOr, BitAndAssign, BitAnd, BitXorAssign,
