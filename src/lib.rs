@@ -207,6 +207,25 @@ impl<T: Debug + PrimInt> Vob<T> {
         }
     }
 
+    /// Creates a Vob (with a user-defined backing storage type) that holds `len` elements, setting
+    /// each element to `value`.
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::Vob;
+    /// let v = Vob::<u64>::from_elem_with_storage_type(true, 2);
+    /// assert_eq!(v.len(), 2);
+    /// assert_eq!(v.get(0), Some(true));
+    /// ```
+    pub fn from_elem_with_storage_type(value: bool, len: usize) -> Vob<T> {
+        let mut v = Vob {
+            len,
+            vec: vec![if value { !T::zero() } else { T::zero() }; blocks_required::<T>(len)],
+        };
+        v.mask_last_block();
+        v
+    }
+
     /// Returns the number of bits the Vob can hold without reallocating.
     ///
     /// # Examples
@@ -1611,6 +1630,27 @@ mod tests {
         assert_eq!(v, Vob::from_elem(true, 2 * size_of::<usize>() * 8 + 1));
         v.truncate(0);
         assert_eq!(v, Vob::new());
+    }
+
+    #[test]
+    fn test_from_elem_with_storaget() {
+        let mut v = Vob::<u64>::from_elem_with_storage_type(true, 2 * size_of::<usize>() * 8 + 1);
+        assert_eq!(
+            v,
+            Vob::<u64>::from_elem_with_storage_type(true, 2 * size_of::<usize>() * 8 + 1)
+        );
+        v.truncate(2 * size_of::<usize>() * 8 + 1);
+        assert_eq!(
+            v,
+            Vob::<u64>::from_elem_with_storage_type(true, 2 * size_of::<usize>() * 8 + 1)
+        );
+        v.truncate(3 * size_of::<usize>() * 8 + 1);
+        assert_eq!(
+            v,
+            Vob::<u64>::from_elem_with_storage_type(true, 2 * size_of::<usize>() * 8 + 1)
+        );
+        v.truncate(0);
+        assert_eq!(v, Vob::<u64>::new_with_storage_type(0));
     }
 
     #[test]
