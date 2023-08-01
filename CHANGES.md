@@ -1,3 +1,8 @@
+# vob 3.0.3 (2022-08-02)
+
+* Update dependencies.
+
+
 # vob 3.0.2 (2022-07-25)
 
 * Add `from_elem_with_storage_type` as a dual of `new_with_storage_type`.
