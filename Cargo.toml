@@ -2,7 +2,7 @@
 name = "vob"
 description = "Vector of Bits with Vec-like API and usize backing storage"
 repository = "https://github.com/softdevteam/vob/"
-version = "3.0.2"
+version = "3.0.3"
 authors = ["Laurence Tratt <laurie@tratt.net>"]
 readme = "README.md"
 license = "Apache-2.0/MIT"
@@ -10,7 +10,7 @@ categories = ["data-structures"]
 edition = "2018"
 
 [build-dependencies]
-rustc_version = "0.3"
+rustc_version = "0.4"
 
 [dependencies]
 num-traits = "0.2.14"
