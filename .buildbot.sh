@@ -14,6 +14,7 @@ cargo test
 cargo test --features "unsafe_internals"
 cargo test --release
 cargo test --release --features "unsafe_internals"
+cargo bench
 
 cargo fmt --all -- --check
 
