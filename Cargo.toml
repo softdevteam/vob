@@ -25,5 +25,9 @@ rand_pcg = "0.3"
 name = "vob"
 harness = false
 
+[[bench]]
+name = "comparative"
+harness = false
+
 [features]
 unsafe_internals = []
