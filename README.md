@@ -1,4 +1,3 @@
-[![Build Status](https://api.travis-ci.org/softdevteam/vob.svg?branch=master)](https://travis-ci.org/softdevteam/vob)
 [![Latest version](https://img.shields.io/crates/v/vob.svg)](https://crates.io/crates/vob)
 [![Documentation](https://docs.rs/vob/badge.svg)](https://docs.rs/vob)
 
