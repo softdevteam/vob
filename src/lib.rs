@@ -165,22 +165,7 @@ impl Vob<usize> {
                     continue;
                 }
                 let b = slice[off];
-                #[cfg(not(reverse_bits))]
-                {
-                    if b != 0 {
-                        {
-                            let mut rb: u8 = 0; // the byte b with its bits in reverse order
-                            for k in 0..8 {
-                                rb |= ((b >> k) & 1) << (8 - k - 1);
-                            }
-                            w |= (rb as usize) << (j * 8);
-                        }
-                    }
-                }
-                #[cfg(reverse_bits)]
-                {
-                    w |= (b.reverse_bits() as usize) << (j * 8);
-                }
+                w |= (b.reverse_bits() as usize) << (j * 8);
             }
             v.vec.push(w);
         }
