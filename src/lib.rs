@@ -16,6 +16,8 @@ use std::{
     slice,
 };
 
+#[cfg(feature = "bincode")]
+use bincode::{Decode, Encode};
 use num_traits::{PrimInt, Zero};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -89,6 +91,7 @@ use serde::{Deserialize, Serialize};
 /// `Vob`'s [`set_all(false)`](struct.Vob.html#method.set_all) function.
 #[derive(Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "bincode", derive(Encode, Decode))]
 pub struct Vob<T = usize> {
     /// How many bits are stored in this Vob?
     len: usize,
