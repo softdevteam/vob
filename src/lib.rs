@@ -1006,7 +1006,7 @@ pub struct Iter<'a, T: 'a> {
     range: Range<usize>,
 }
 
-impl<'a, T: Debug + PrimInt> Iterator for Iter<'a, T> {
+impl<T: Debug + PrimInt> Iterator for Iter<'_, T> {
     type Item = bool;
 
     fn next(&mut self) -> Option<bool> {
@@ -1018,13 +1018,13 @@ impl<'a, T: Debug + PrimInt> Iterator for Iter<'a, T> {
     }
 }
 
-impl<'a, T: Debug + PrimInt> DoubleEndedIterator for Iter<'a, T> {
+impl<T: Debug + PrimInt> DoubleEndedIterator for Iter<'_, T> {
     fn next_back(&mut self) -> Option<bool> {
         self.range.next_back().map(|i| self.vob.get(i).unwrap())
     }
 }
 
-impl<'a, T: Debug + PrimInt> ExactSizeIterator for Iter<'a, T> {}
+impl<T: Debug + PrimInt> ExactSizeIterator for Iter<'_, T> {}
 
 impl<'a, T: Debug + PrimInt> IntoIterator for &'a Vob<T> {
     type Item = bool;
@@ -1041,7 +1041,7 @@ pub struct IterSetBits<'a, T: 'a> {
     range: Range<usize>,
 }
 
-impl<'a, T: Debug + PrimInt> Iterator for IterSetBits<'a, T> {
+impl<T: Debug + PrimInt> Iterator for IterSetBits<'_, T> {
     type Item = usize;
 
     fn next(&mut self) -> Option<usize> {
@@ -1096,7 +1096,7 @@ pub struct IterUnsetBits<'a, T: 'a> {
     range: Range<usize>,
 }
 
-impl<'a, T: Debug + PrimInt> Iterator for IterUnsetBits<'a, T> {
+impl<T: Debug + PrimInt> Iterator for IterUnsetBits<'_, T> {
     type Item = usize;
 
     fn next(&mut self) -> Option<usize> {
@@ -1173,7 +1173,7 @@ pub struct StorageIter<'a, B: 'a> {
     iter: slice::Iter<'a, B>,
 }
 
-impl<'a, T: Debug + PrimInt> Iterator for StorageIter<'a, T> {
+impl<T: Debug + PrimInt> Iterator for StorageIter<'_, T> {
     type Item = T;
 
     fn next(&mut self) -> Option<T> {
