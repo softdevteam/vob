@@ -1,3 +1,13 @@
+# vob 3.0.4 (2025-03-17)
+
+* Drop support for Rust pre-1.37.
+
+* Add an optional bincode dependency, which can be used as an alternative to
+  serde for encoding / decoding.
+
+* Use Criterion for internal benchmarking and add several benchmarks.
+
+
 # vob 3.0.3 (2022-08-02)
 
 * Update dependencies.
