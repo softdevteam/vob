@@ -1803,20 +1803,20 @@ mod tests {
     }
 
     fn random_vob(len: usize) -> Vob {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         let mut vob = Vob::with_capacity(len);
         for _ in 0..len {
-            vob.push(rng.gen());
+            vob.push(rng.random());
         }
         vob
     }
 
     #[test]
     fn test_extend_from_vob() {
-        let mut rng = rand::thread_rng();
+        let mut rng = rand::rng();
         for _ in 0..200 {
-            let len_a: u8 = rng.gen();
-            let len_b: u8 = rng.gen();
+            let len_a: u8 = rng.random();
+            let len_b: u8 = rng.random();
             let mut a = random_vob(len_a as usize);
             let mut a_copy = a.clone();
             let b = random_vob(len_b as usize);
