@@ -41,8 +41,7 @@ fn comparative(c: &mut Criterion) {
 
     c.bench_function("Vob comparative", |b| {
         b.iter(|| {
-            let mut vob: vob::Vob<u32> = vob::Vob::new_with_storage_type(SIZE);
-            vob.resize(SIZE, false);
+            let mut vob = vob::Vob::<u32>::from_elem_with_storage_type(false, SIZE);
 
             // set half of the vob to true
             for index in indices.iter().skip(SIZE / 2) {
@@ -54,6 +53,34 @@ fn comparative(c: &mut Criterion) {
             }
             for index in indices.iter().skip(SIZE / 2) {
                 assert!(vob[*index], "index {} is supposed to be set", index);
+            }
+        })
+    });
+
+    c.bench_function("Vob unchecked comparative", |b| {
+        b.iter(|| {
+            let mut vob = vob::Vob::<u32>::from_elem_with_storage_type(false, SIZE);
+
+            unsafe {
+                // set half of the vob to true
+                for index in indices.iter().skip(SIZE / 2) {
+                    vob.set_unchecked(*index, true);
+                }
+
+                for index in indices.iter().take(SIZE / 2) {
+                    assert!(
+                        !vob.get_unchecked(*index),
+                        "index {} is supposed to be cleared",
+                        index
+                    );
+                }
+                for index in indices.iter().skip(SIZE / 2) {
+                    assert!(
+                        vob.get_unchecked(*index),
+                        "index {} is supposed to be set",
+                        index
+                    );
+                }
             }
         })
     });
@@ -72,6 +99,33 @@ fn comparative(c: &mut Criterion) {
             }
             for index in indices.iter().skip(SIZE / 2) {
                 assert!(vec[*index], "index {} is supposed to be set", index);
+            }
+        })
+    });
+
+    c.bench_function("Vec unchecked comparative", |b| {
+        b.iter(|| {
+            let mut vec: Vec<bool> = vec![false; SIZE];
+            unsafe {
+                // set half of the vec to true
+                for index in indices.iter().skip(SIZE / 2) {
+                    *vec.get_unchecked_mut(*index) = true;
+                }
+
+                for index in indices.iter().take(SIZE / 2) {
+                    assert!(
+                        !vec.get_unchecked(*index),
+                        "index {} is supposed to be cleared",
+                        index
+                    );
+                }
+                for index in indices.iter().skip(SIZE / 2) {
+                    assert!(
+                        vec.get_unchecked(*index),
+                        "index {} is supposed to be set",
+                        index
+                    );
+                }
             }
         })
     });

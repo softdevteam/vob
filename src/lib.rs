@@ -424,6 +424,32 @@ impl<T: Debug + PrimInt> Vob<T> {
         Some(blk & (T::one() << (index % bits_per_block::<T>())) != T::zero())
     }
 
+    /// Returns the value of the element at position `index`. This is done without doing bounds
+    /// checking. For a safe alternative see [`get`].
+    ///
+    /// # Safety
+    ///
+    /// Calling this method with an out-of-bounds index is *[undefined behavior]*
+    ///
+    /// You can think of this like `.get(index).unwrap_unchecked()`.
+    ///
+    /// [`get`]: crate::Vob::get
+    /// [undefined behavior]: https://doc.rust-lang.org/reference/behavior-considered-undefined.html
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::Vob;
+    /// let mut v = Vob::new();
+    /// v.push(false);
+    /// unsafe {
+    ///    assert_eq!(v.get_unchecked(0), false);
+    /// }
+    /// ```
+    pub unsafe fn get_unchecked(&self, index: usize) -> bool {
+        let blk = *self.vec.get_unchecked(block_offset::<T>(index));
+        blk & (T::one() << (index % bits_per_block::<T>())) != T::zero()
+    }
+
     /// Sets the value of the element at position `index`. Returns `true` if this led to a change
     /// in the underlying storage or `false` otherwise.
     ///
@@ -454,6 +480,43 @@ impl<T: Debug + PrimInt> Vob<T> {
         let new_v = if value { old_v | msk } else { old_v & !msk };
         if new_v != old_v {
             self.vec[off] = new_v;
+            true
+        } else {
+            false
+        }
+    }
+
+    /// Sets the value of the element at position `index`. Returns `true` if this led to a change
+    /// in the underlying storage or `false` otherwise. This is done without doing bounds
+    /// checking. For a safe alternative see [`set`].
+    ///
+    /// # Safety
+    ///
+    /// Calling this method with an out-of-bounds index is *[undefined behavior]*
+    ///
+    /// [`set`]: crate::Vob::set
+    /// [undefined behavior]: https://doc.rust-lang.org/reference/behavior-considered-undefined.html
+    ///
+    /// # Examples
+    /// ```
+    /// use vob::Vob;
+    /// let mut v = Vob::new();
+    /// v.push(false);
+    /// unsafe {
+    ///     v.set_unchecked(0, true);
+    ///     assert_eq!(v.get_unchecked(0), true);
+    ///     assert_eq!(v.set_unchecked(0, false), true);
+    ///     assert_eq!(v.set_unchecked(0, false), false);
+    ///     assert_eq!(v.get_unchecked(0), false);
+    /// }
+    /// ```
+    pub unsafe fn set_unchecked(&mut self, index: usize, value: bool) -> bool {
+        let msk = T::one() << (index % bits_per_block::<T>());
+        let off = block_offset::<T>(index);
+        let old_v = *self.vec.get_unchecked(off);
+        let new_v = if value { old_v | msk } else { old_v & !msk };
+        if new_v != old_v {
+            *self.vec.get_unchecked_mut(off) = new_v;
             true
         } else {
             false
@@ -1188,11 +1251,13 @@ impl<T: Debug + PrimInt> Iterator for StorageIter<'_, T> {
     }
 }
 
+#[inline(always)]
 /// How many bits are stored in each underlying storage block?
 fn bits_per_block<T>() -> usize {
     bytes_per_block::<T>() * 8
 }
 
+#[inline(always)]
 /// How many bytes are stored in each underlying storage block?
 fn bytes_per_block<T>() -> usize {
     size_of::<T>()
@@ -1510,11 +1575,18 @@ mod tests {
         assert_eq!(v.get(size_of::<u8>() * 8), Some(true));
         v.set(size_of::<u8>() * 8, false);
         assert_eq!(v.get(size_of::<u8>() * 8), Some(false));
+        unsafe {
+            assert_eq!(v.get_unchecked(size_of::<u8>() * 8), false);
+        }
         assert_eq!(v.get(size_of::<u8>() * 8 + 1), None);
         assert_eq!(v.set(size_of::<u8>() * 8, true), true);
         assert_eq!(v.set(size_of::<u8>() * 8, true), false);
         assert_eq!(v.get(size_of::<u8>() * 8 - 1), Some(true));
         assert_eq!(v.get(size_of::<u8>() * 8 - 2), Some(true));
+        unsafe {
+            assert_eq!(v.get_unchecked(size_of::<u8>() * 8 - 2), true);
+            assert_eq!(v.set_unchecked(size_of::<u8>() * 8 - 2, true), false);
+        }
     }
 
     #[test]
@@ -1565,6 +1637,10 @@ mod tests {
         assert_eq!(v.set(size_of::<usize>() * 8, true), false);
         assert_eq!(v.get(size_of::<usize>() * 8 - 1), Some(true));
         assert_eq!(v.get(size_of::<usize>() * 8 - 2), Some(true));
+        unsafe {
+            assert_eq!(v.get_unchecked(size_of::<usize>() * 8 - 2), true);
+            assert_eq!(v.set_unchecked(size_of::<usize>() * 8 - 2, true), false);
+        }
     }
 
     #[test]
@@ -1854,6 +1930,23 @@ mod tests {
                 let b_ = joined.split_off(len_a as usize);
                 assert_eq!(a, joined, "lower part for {}, {}", len_a, len_b);
                 assert_eq!(b, b_, "upper part for {}, {}", len_a, len_b);
+            }
+        }
+    }
+
+    #[test]
+    fn test_unchecked() {
+        unsafe {
+            for test_len in 0..128 {
+                let mut a = random_vob(test_len);
+                let mut b = a.clone();
+                for i in 0..test_len {
+                    assert_eq!(a.get(i).unwrap(), b.get_unchecked(i));
+                    assert_eq!(a.set(i, false), b.set_unchecked(i, false));
+                    assert!(!b.get_unchecked(i));
+                    assert_eq!(a.set(i, true), b.set_unchecked(i, true));
+                    assert!(b.get_unchecked(i));
+                }
             }
         }
     }
