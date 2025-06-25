@@ -1,3 +1,8 @@
+# vob 3.0.5 (2025-06-25)
+
+* Add `unchecked_get` and `unchecked_set`.
+
+
 # vob 3.0.4 (2025-03-17)
 
 * Drop support for Rust pre-1.37.
