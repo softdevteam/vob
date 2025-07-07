@@ -536,7 +536,7 @@ impl<T: Debug + PrimInt> Vob<T> {
     /// assert_eq!(iterator.next(), Some(true));
     /// assert_eq!(iterator.next(), None);
     /// ```
-    pub fn iter(&self) -> Iter<T> {
+    pub fn iter(&self) -> Iter<'_, T> {
         Iter {
             vob: self,
             range: 0..self.len,
@@ -575,7 +575,7 @@ impl<T: Debug + PrimInt> Vob<T> {
     /// assert_eq!(iterator.next(), Some(1));
     /// assert_eq!(iterator.next(), None);
     /// ```
-    pub fn iter_set_bits<R>(&self, range: R) -> IterSetBits<T>
+    pub fn iter_set_bits<R>(&self, range: R) -> IterSetBits<'_, T>
     where
         R: RangeBounds<usize>,
     {
@@ -599,7 +599,7 @@ impl<T: Debug + PrimInt> Vob<T> {
     /// assert_eq!(iterator.next(), Some(0));
     /// assert_eq!(iterator.next(), None);
     /// ```
-    pub fn iter_unset_bits<R>(&self, range: R) -> IterUnsetBits<T>
+    pub fn iter_unset_bits<R>(&self, range: R) -> IterUnsetBits<'_, T>
     where
         R: RangeBounds<usize>,
     {
@@ -620,7 +620,7 @@ impl<T: Debug + PrimInt> Vob<T> {
     /// let v2 = Vob::from_elem(true, 129);
     /// assert_eq!(v2.iter_storage().last(), Some(1));
     /// ```
-    pub fn iter_storage(&self) -> StorageIter<T> {
+    pub fn iter_storage(&self) -> StorageIter<'_, T> {
         StorageIter {
             iter: self.vec.iter(),
         }
