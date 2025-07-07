@@ -7,7 +7,7 @@ use std::{
     cmp::{min, PartialEq},
     fmt::{self, Debug},
     hash::{Hash, Hasher},
-    iter::FromIterator,
+    iter::{DoubleEndedIterator, FromIterator},
     mem::{replace, size_of},
     ops::{
         Bound::{Excluded, Included, Unbounded},
@@ -1156,6 +1156,42 @@ impl<T: Debug + PrimInt> Iterator for IterSetBits<'_, T> {
     }
 }
 
+impl<T: Debug + PrimInt> DoubleEndedIterator for IterSetBits<'_, T> {
+    fn next_back(&mut self) -> Option<usize> {
+        if let Some(i) = self.range.next_back() {
+            let mut b = block_offset::<T>(i);
+            let mut v = self.vob.vec[b];
+            // If all bits are set, we don't need to do any complicated checks.
+            if v == T::max_value() {
+                return Some(i);
+            }
+            // At this point we've got a block which might or might not have some bits set. We now
+            // fall back to the general case.
+            let mut i_off = i % bits_per_block::<T>();
+            loop {
+                let lz = (v << (bits_per_block::<T>() - 1 - i_off)).leading_zeros() as usize;
+                if lz < bits_per_block::<T>() {
+                    let bs = b * bits_per_block::<T>() + i_off - lz;
+                    self.range.end = bs;
+                    if bs < self.range.start {
+                        break;
+                    }
+                    return Some(bs);
+                }
+                if b == block_offset::<T>(self.range.start) {
+                    // We've exhausted the iterator.
+                    self.range.start = self.range.end;
+                    break;
+                }
+                b -= 1;
+                v = self.vob.vec[b];
+                i_off = bits_per_block::<T>() - 1;
+            }
+        }
+        None
+    }
+}
+
 #[derive(Clone)]
 pub struct IterUnsetBits<'a, T: 'a> {
     vob: &'a Vob<T>,
@@ -1542,6 +1578,7 @@ mod tests {
         hash::{Hash, Hasher},
         iter::FromIterator,
         mem::size_of,
+        ops::RangeBounds,
     };
 
     #[test]
@@ -1791,8 +1828,23 @@ mod tests {
 
     #[test]
     fn test_iter_set_bits() {
+        fn t<R>(v: &Vob, range: R, expected: Vec<usize>)
+        where
+            R: Clone + RangeBounds<usize>,
+        {
+            let rev = expected.iter().cloned().rev().collect::<Vec<usize>>();
+            assert_eq!(
+                v.iter_set_bits(range.clone()).collect::<Vec<usize>>(),
+                expected
+            );
+            assert_eq!(v.iter_set_bits(range).rev().collect::<Vec<usize>>(), rev);
+        }
+
+        t(&vob![], .., vec![]);
+        t(&Vob::from_elem(true, 131), .., (0..131).collect::<Vec<_>>());
+
         let mut v1 = vob![false, true, false, true];
-        assert_eq!(v1.iter_set_bits(..).collect::<Vec<usize>>(), vec![1, 3]);
+        t(&v1, .., vec![1, 3]);
         v1.resize(127, false);
         v1.push(true);
         v1.push(false);
@@ -1800,19 +1852,14 @@ mod tests {
         v1.push(true);
         v1.resize(256, false);
         v1.push(true);
-        assert_eq!(
-            v1.iter_set_bits(..).collect::<Vec<usize>>(),
-            vec![1, 3, 127, 129, 130, 256]
-        );
-        assert_eq!(
-            v1.iter_set_bits(2..256).collect::<Vec<usize>>(),
-            vec![3, 127, 129, 130]
-        );
-        assert_eq!(
-            v1.iter_set_bits(2..).collect::<Vec<usize>>(),
-            vec![3, 127, 129, 130, 256]
-        );
-        assert_eq!(v1.iter_set_bits(..3).collect::<Vec<usize>>(), vec![1]);
+        assert_eq!(v1.len(), 257);
+        t(&v1, .., vec![1, 3, 127, 129, 130, 256]);
+        t(&v1, 2..257, vec![3, 127, 129, 130, 256]);
+        t(&v1, 2..256, vec![3, 127, 129, 130]);
+        t(&v1, 2.., vec![3, 127, 129, 130, 256]);
+        t(&v1, 1..255, vec![1, 3, 127, 129, 130]);
+        t(&v1, ..3, vec![1]);
+        t(&v1, 128.., vec![129, 130, 256]);
     }
 
     #[test]
