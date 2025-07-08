@@ -1228,6 +1228,38 @@ impl<T: Debug + PrimInt> Iterator for IterUnsetBits<'_, T> {
     }
 }
 
+impl<T: Debug + PrimInt> DoubleEndedIterator for IterUnsetBits<'_, T> {
+    fn next_back(&mut self) -> Option<usize> {
+        if let Some(i) = self.range.next_back() {
+            let mut b = block_offset::<T>(i);
+            let mut v = self.vob.vec[b];
+            if v == T::zero() {
+                return Some(i);
+            }
+            let mut i_off = i % bits_per_block::<T>();
+            loop {
+                let lz = (!v << (bits_per_block::<T>() - 1 - i_off)).leading_zeros() as usize;
+                if lz < bits_per_block::<T>() {
+                    let bs = b * bits_per_block::<T>() + i_off - lz;
+                    self.range.end = bs;
+                    if bs < self.range.start {
+                        break;
+                    }
+                    return Some(bs);
+                }
+                if b == block_offset::<T>(self.range.start) {
+                    self.range.start = self.range.end;
+                    break;
+                }
+                b -= 1;
+                v = self.vob.vec[b];
+                i_off = bits_per_block::<T>() - 1;
+            }
+        }
+        None
+    }
+}
+
 impl<T: Debug + PrimInt> PartialEq for Vob<T> {
     fn eq(&self, other: &Self) -> bool {
         if self.len != other.len {
@@ -1843,15 +1875,28 @@ mod tests {
 
     #[test]
     fn test_iter_unset_bits() {
+        fn t<R>(v: &Vob, range: R, expected: Vec<usize>)
+        where
+            R: Clone + RangeBounds<usize>,
+        {
+            let rev = expected.iter().cloned().rev().collect::<Vec<usize>>();
+            assert_eq!(
+                v.iter_unset_bits(range.clone()).collect::<Vec<usize>>(),
+                expected
+            );
+            assert_eq!(v.iter_unset_bits(range).rev().collect::<Vec<usize>>(), rev);
+        }
+
+        t(&vob![], .., vec![]);
+        t(
+            &Vob::from_elem(false, 131),
+            ..,
+            (0..131).collect::<Vec<_>>(),
+        );
+
         let mut v1 = vob![false, true, false, false];
-        assert_eq!(
-            v1.iter_unset_bits(..).collect::<Vec<usize>>(),
-            vec![0, 2, 3]
-        );
-        assert_eq!(
-            v1.iter_unset_bits(..10).collect::<Vec<usize>>(),
-            vec![0, 2, 3]
-        );
+        t(&v1, .., vec![0, 2, 3]);
+        t(&v1, ..10, vec![0, 2, 3]);
         v1.resize(127, true);
         v1.push(false);
         v1.push(true);
@@ -1859,14 +1904,14 @@ mod tests {
         v1.push(false);
         v1.resize(256, true);
         v1.push(false);
-        assert_eq!(
-            v1.iter_unset_bits(..).collect::<Vec<usize>>(),
-            vec![0, 2, 3, 127, 129, 130, 256]
-        );
-        assert_eq!(
-            v1.iter_unset_bits(3..256).collect::<Vec<usize>>(),
-            vec![3, 127, 129, 130]
-        );
+        assert_eq!(v1.len(), 257);
+        t(&v1, .., vec![0, 2, 3, 127, 129, 130, 256]);
+        t(&v1, 2.., vec![2, 3, 127, 129, 130, 256]);
+        t(&v1, 2..257, vec![2, 3, 127, 129, 130, 256]);
+        t(&v1, 2..256, vec![2, 3, 127, 129, 130]);
+        t(&v1, 1..255, vec![2, 3, 127, 129, 130]);
+        t(&v1, ..3, vec![0, 2]);
+        t(&v1, 128.., vec![129, 130, 256]);
     }
 
     #[test]
