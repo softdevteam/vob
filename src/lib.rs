@@ -7,7 +7,7 @@ use std::{
     cmp::{min, PartialEq},
     fmt::{self, Debug},
     hash::{Hash, Hasher},
-    iter::{DoubleEndedIterator, FromIterator},
+    iter::{DoubleEndedIterator, FromIterator, FusedIterator},
     mem::{replace, size_of},
     ops::{
         Bound::{Excluded, Included, Unbounded},
@@ -1182,6 +1182,8 @@ impl<T: Debug + PrimInt> DoubleEndedIterator for IterSetBits<'_, T> {
     }
 }
 
+impl<T: Debug + PrimInt> FusedIterator for IterSetBits<'_, T> {}
+
 #[derive(Clone)]
 pub struct IterUnsetBits<'a, T: 'a> {
     vob: &'a Vob<T>,
@@ -1259,6 +1261,8 @@ impl<T: Debug + PrimInt> DoubleEndedIterator for IterUnsetBits<'_, T> {
         None
     }
 }
+
+impl<T: Debug + PrimInt> FusedIterator for IterUnsetBits<'_, T> {}
 
 impl<T: Debug + PrimInt> PartialEq for Vob<T> {
     fn eq(&self, other: &Self) -> bool {
@@ -1912,6 +1916,21 @@ mod tests {
         t(&v1, 1..255, vec![2, 3, 127, 129, 130]);
         t(&v1, ..3, vec![0, 2]);
         t(&v1, 128.., vec![129, 130, 256]);
+    }
+
+    #[test]
+    fn test_fused() {
+        let v1 = vob![true];
+        let mut i1 = v1.iter_set_bits(..);
+        assert!(i1.next().is_some());
+        assert!(i1.next().is_none());
+        assert!(i1.next().is_none());
+
+        let v2 = vob![false];
+        let mut i2 = v2.iter_unset_bits(..);
+        assert!(i2.next().is_some());
+        assert!(i2.next().is_none());
+        assert!(i2.next().is_none());
     }
 
     #[test]
