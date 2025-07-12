@@ -5,6 +5,7 @@
 
 use std::{
     cmp::{min, PartialEq},
+    convert::TryFrom,
     fmt::{self, Debug},
     hash::{Hash, Hasher},
     iter::{DoubleEndedIterator, FromIterator, FusedIterator},
@@ -585,6 +586,58 @@ impl<T: Debug + PrimInt> Vob<T> {
         }
     }
 
+    /// Counts the number of set bits.
+    /// This method assumes the range is processed with process_range()
+    fn count_set_bits(&self, range: Range<usize>) -> usize {
+        // Early return for empty ranges
+        if range.is_empty() {
+            return 0;
+        }
+        let start_off = block_offset::<T>(range.start);
+
+        // this -1 arithmetic is safe since we already tested for range.start & range.end equality
+        let end_off = blocks_required::<T>(range.end) - 1;
+
+        if start_off == end_off {
+            // Range entirely within one word
+            let b = self.vec[start_off];
+            let start_bit = range.start % bits_per_block::<T>();
+            let end_bit = range.end % bits_per_block::<T>();
+
+            // Remove bits before start_bit and bits after end_bit
+            let count = if end_bit == 0 {
+                // end_bit = 0 means we want everything from start_bit to end of word
+                // After the right shift, we have what we want
+                b >> start_bit
+            } else {
+                // We want bits from start_bit to end_bit
+                // After right shift, we need to remove the high bits
+                (b >> start_bit) << (start_bit + bits_per_block::<T>() - end_bit)
+            }
+            .count_ones();
+            return usize::try_from(count).unwrap();
+        }
+
+        // First word: shift out bits before start_bit
+        let start_bit = range.start % bits_per_block::<T>();
+        let mut count = usize::try_from((self.vec[start_off] >> start_bit).count_ones()).unwrap();
+
+        // Middle words
+        for word_idx in (start_off + 1)..end_off {
+            count += usize::try_from(self.vec[word_idx].count_ones()).unwrap();
+        }
+
+        // Last word: shift out bits after end_bit
+        let end_bit = range.end % bits_per_block::<T>();
+        let count_ones = if end_bit == 0 {
+            // end_bit = 0 means we want to count the entire end_off word
+            self.vec[end_off].count_ones()
+        } else {
+            (self.vec[end_off] << (bits_per_block::<T>() - end_bit)).count_ones()
+        };
+        count + usize::try_from(count_ones).unwrap()
+    }
+
     /// Returns an iterator which efficiently produces the index of each unset bit in the specified
     /// range. Assuming appropriate support from your CPU, this is much more efficient than
     /// checking each bit individually.
@@ -1082,6 +1135,10 @@ impl<T: Debug + PrimInt> Iterator for Iter<'_, T> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.range.size_hint()
     }
+
+    fn count(self) -> usize {
+        self.range.count()
+    }
 }
 
 impl<T: Debug + PrimInt> DoubleEndedIterator for Iter<'_, T> {
@@ -1147,6 +1204,10 @@ impl<T: Debug + PrimInt> Iterator for IterSetBits<'_, T> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.range.size_hint()
+    }
+
+    fn count(self) -> usize {
+        self.vob.count_set_bits(self.range)
     }
 }
 
@@ -1228,6 +1289,12 @@ impl<T: Debug + PrimInt> Iterator for IterUnsetBits<'_, T> {
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.range.size_hint()
     }
+
+    fn count(self) -> usize {
+        // This arithmetic is safe because (self.range.end - self.range.start) is the total number of bits,
+        // and self.vob.count_set_bits() always returns a value less than or equal to that.
+        (self.range.end - self.range.start) - self.vob.count_set_bits(self.range)
+    }
 }
 
 impl<T: Debug + PrimInt> DoubleEndedIterator for IterUnsetBits<'_, T> {
@@ -1299,6 +1366,10 @@ impl<T: Debug + PrimInt> Iterator for StorageIter<'_, T> {
 
     fn size_hint(&self) -> (usize, Option<usize>) {
         self.iter.size_hint()
+    }
+
+    fn count(self) -> usize {
+        self.iter.count()
     }
 }
 
@@ -1974,6 +2045,27 @@ mod tests {
         for _ in 0..len {
             vob.push(rng.random());
         }
+        // these tests can later be dialed down, as they noticeable slow down every random vob test.
+        assert_eq!(
+            vob.iter_set_bits(..).count(),
+            vob.iter_set_bits(..).filter(|_| true).count()
+        );
+        assert_eq!(
+            vob.iter_unset_bits(..).count(),
+            vob.iter_unset_bits(..).filter(|_| true).count()
+        );
+        if len > 2 {
+            // trigger the edge cases of count_set_bits()
+            let range = 1..len - 1;
+            assert_eq!(
+                vob.iter_set_bits(range.clone()).count(),
+                vob.iter_set_bits(range.clone()).filter(|_| true).count()
+            );
+            assert_eq!(
+                vob.iter_unset_bits(range.clone()).count(),
+                vob.iter_unset_bits(range.clone()).filter(|_| true).count()
+            );
+        }
         vob
     }
 
@@ -2046,5 +2138,38 @@ mod tests {
         v.pop();
         v.push(true);
         assert_eq!(v.vec.len(), 1);
+    }
+
+    #[test]
+    fn test_count() {
+        let mut rng = rand::rng();
+
+        for test_len in 1..128 {
+            let vob = random_vob(test_len);
+            assert_eq!(
+                vob.iter_storage().count(),
+                vob.iter_storage().filter(|_| true).count()
+            );
+            assert_eq!(vob.iter().count(), vob.iter().filter(|_| true).count());
+            for i in 1..test_len - 1 {
+                let from = rng.random_range(0..i);
+                let to = rng.random_range(from..i);
+                assert_eq!(
+                    vob.iter_set_bits(from..to).count(),
+                    vob.iter_set_bits(from..to).filter(|_| true).count()
+                );
+                assert_eq!(
+                    vob.iter_unset_bits(from..to).count(),
+                    vob.iter_unset_bits(from..to).filter(|_| true).count()
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn test_collect_capacity() {
+        // a test to make sure that iter_set_bits().collect() does not always allocate .len() elements
+        let vec: Vec<usize> = Vob::from_elem(false, 100).iter_set_bits(..).collect();
+        assert_eq!(vec.capacity(), 0);
     }
 }

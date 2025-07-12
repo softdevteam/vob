@@ -65,9 +65,9 @@ fn split_off(c: &mut Criterion) {
 fn xor(c: &mut Criterion) {
     let mut v1 = Vob::with_capacity(N);
     let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
-    v1.extend((0..N).map(|_| rng.gen::<bool>()));
+    v1.extend((0..N).map(|_| rng.random::<bool>()));
     let mut v2 = Vob::with_capacity(N);
-    v2.extend((0..N).map(|_| rng.gen::<bool>()));
+    v2.extend((0..N).map(|_| rng.random::<bool>()));
 
     c.bench_function("xor", |b| {
         b.iter(|| {
@@ -79,9 +79,9 @@ fn xor(c: &mut Criterion) {
 fn or(c: &mut Criterion) {
     let mut v1 = Vob::with_capacity(N);
     let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
-    v1.extend((0..N).map(|_| rng.gen::<bool>()));
+    v1.extend((0..N).map(|_| rng.random::<bool>()));
     let mut v2 = Vob::with_capacity(N);
-    v2.extend((0..N).map(|_| rng.gen::<bool>()));
+    v2.extend((0..N).map(|_| rng.random::<bool>()));
 
     c.bench_function("or", |b| {
         b.iter(|| {
@@ -93,9 +93,9 @@ fn or(c: &mut Criterion) {
 fn and(c: &mut Criterion) {
     let mut v1 = Vob::with_capacity(N);
     let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
-    v1.extend((0..N).map(|_| rng.gen::<bool>()));
+    v1.extend((0..N).map(|_| rng.random::<bool>()));
     let mut v2 = Vob::with_capacity(N);
-    v2.extend((0..N).map(|_| rng.gen::<bool>()));
+    v2.extend((0..N).map(|_| rng.random::<bool>()));
 
     c.bench_function("and", |b| {
         b.iter(|| {
@@ -105,7 +105,7 @@ fn and(c: &mut Criterion) {
 }
 
 fn from_bytes(c: &mut Criterion) {
-    let mut rng = rand::thread_rng();
+    let mut rng = rand::rng();
     let mut v1 = [0u8; 1024];
     rng.fill(&mut v1);
     c.bench_function("from_bytes", |b| b.iter(|| Vob::from_bytes(&v1)));
@@ -114,15 +114,33 @@ fn from_bytes(c: &mut Criterion) {
 fn iter_set_bits(c: &mut Criterion) {
     let mut a = Vob::with_capacity(N);
     let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
-    a.extend((0..N).map(|_| rng.gen::<bool>()));
-    c.bench_function("iter_set_bits", |b| b.iter(|| a.iter_set_bits(..).count()));
+    a.extend((0..N).map(|_| rng.random::<bool>()));
+    c.bench_function("iter_set_bits", |b| {
+        b.iter(|| a.iter_set_bits(..).filter(|_| true).count())
+    });
+}
+
+fn count_set_bits(c: &mut Criterion) {
+    let mut a = Vob::with_capacity(N);
+    let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
+    a.extend((0..N).map(|_| rng.random::<bool>()));
+    c.bench_function("count_set_bits", |b| b.iter(|| a.iter_set_bits(..).count()));
 }
 
 fn iter_set_bits_u8(c: &mut Criterion) {
     let mut a = Vob::<u8>::new_with_storage_type(N);
     let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
-    a.extend((0..N).map(|_| rng.gen::<bool>()));
+    a.extend((0..N).map(|_| rng.random::<bool>()));
     c.bench_function("iter_set_bits_u8", |b| {
+        b.iter(|| a.iter_set_bits(..).filter(|_| true).count())
+    });
+}
+
+fn count_set_bits_u8(c: &mut Criterion) {
+    let mut a = Vob::<u8>::new_with_storage_type(N);
+    let mut rng = Pcg64Mcg::seed_from_u64(RNG_SEED);
+    a.extend((0..N).map(|_| rng.random::<bool>()));
+    c.bench_function("count_set_bits_u8", |b| {
         b.iter(|| a.iter_set_bits(..).count())
     });
 }
@@ -130,6 +148,13 @@ fn iter_set_bits_u8(c: &mut Criterion) {
 fn iter_all_set_bits(c: &mut Criterion) {
     let a = Vob::from_elem(true, N);
     c.bench_function("iter_all_set_bits", |b| {
+        b.iter(|| a.iter_set_bits(..).filter(|_| true).count())
+    });
+}
+
+fn count_all_set_bits(c: &mut Criterion) {
+    let a = Vob::from_elem(true, N);
+    c.bench_function("count_all_set_bits", |b| {
         b.iter(|| a.iter_set_bits(..).count())
     });
 }
@@ -137,6 +162,13 @@ fn iter_all_set_bits(c: &mut Criterion) {
 fn iter_all_unset_bits(c: &mut Criterion) {
     let a = Vob::from_elem(true, N);
     c.bench_function("iter_all_unset_bits", |b| {
+        b.iter(|| a.iter_unset_bits(..).filter(|_| true).count())
+    });
+}
+
+fn count_all_unset_bits(c: &mut Criterion) {
+    let a = Vob::from_elem(true, N);
+    c.bench_function("count_all_unset_bits", |b| {
         b.iter(|| a.iter_unset_bits(..).count())
     });
 }
@@ -153,8 +185,12 @@ criterion_group!(
     and,
     from_bytes,
     iter_set_bits,
+    count_set_bits,
     iter_set_bits_u8,
+    count_set_bits_u8,
     iter_all_set_bits,
-    iter_all_unset_bits
+    count_all_set_bits,
+    iter_all_unset_bits,
+    count_all_unset_bits
 );
 criterion_main!(benches);
