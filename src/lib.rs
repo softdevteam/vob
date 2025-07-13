@@ -1304,30 +1304,27 @@ impl<T: Debug + PrimInt> Iterator for StorageIter<'_, T> {
 
 #[inline(always)]
 /// How many bits are stored in each underlying storage block?
-fn bits_per_block<T>() -> usize {
+const fn bits_per_block<T>() -> usize {
     bytes_per_block::<T>() * 8
 }
 
 #[inline(always)]
 /// How many bytes are stored in each underlying storage block?
-fn bytes_per_block<T>() -> usize {
+const fn bytes_per_block<T>() -> usize {
     size_of::<T>()
 }
 
+#[inline(always)]
 /// Return the offset in the vector of the storage block storing the bit `off`.
-fn block_offset<T>(off: usize) -> usize {
+const fn block_offset<T>(off: usize) -> usize {
     off / bits_per_block::<T>()
 }
 
+#[inline(always)]
 /// Takes as input a number of bits requiring storage; returns an aligned number of blocks needed
 /// to store those bits.
 fn blocks_required<T>(num_bits: usize) -> usize {
-    num_bits / bits_per_block::<T>()
-        + if num_bits % bits_per_block::<T>() == 0 {
-            0
-        } else {
-            1
-        }
+    num_bits / bits_per_block::<T>() + usize::from(num_bits % bits_per_block::<T>() != 0)
 }
 
 #[macro_export]
