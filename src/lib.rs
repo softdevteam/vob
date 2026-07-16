@@ -17,11 +17,11 @@ use std::{
     slice,
 };
 
-#[cfg(feature = "bincode")]
-use bincode::{Decode, Encode};
 use num_traits::{PrimInt, Zero};
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
+#[cfg(feature = "wincode")]
+use wincode::{SchemaRead, SchemaWrite};
 
 /// A Vob is a "vector of bits": a sequence of bits which exposes a `Vec`-like interface. Whereas
 /// `Vec<bool>` requires 1 byte of storage per bit, `Vob` requires only 1 bit of storage per bit.
@@ -92,7 +92,7 @@ use serde::{Deserialize, Serialize};
 /// `Vob`'s [`set_all(false)`](struct.Vob.html#method.set_all) function.
 #[derive(Clone, Default)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "bincode", derive(Encode, Decode))]
+#[cfg_attr(feature = "wincode", derive(SchemaRead, SchemaWrite))]
 pub struct Vob<T = usize> {
     /// How many bits are stored in this Vob?
     len: usize,
