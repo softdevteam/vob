@@ -1,3 +1,9 @@
+# vob 4.0.0 (2026-07-16)
+
+* Move from (the unmaintained) `bincode` to `wincode`. The associated feature
+  name has also been renamed to `wincode`.
+
+
 # vob 3.0.6 (2025-08-14)
 
 * Transparently optimise `iter_{set|unset}_bits(...).count()` to use platform
