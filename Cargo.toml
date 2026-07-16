@@ -29,4 +29,3 @@ harness = false
 
 [features]
 unsafe_internals = []
-bincode = ["dep:wincode"]
