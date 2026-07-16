@@ -299,7 +299,7 @@ impl<T: Debug + PrimInt> Vob<T> {
     /// ```
     pub fn push(&mut self, value: bool) {
         debug_assert_eq!(self.vec.len(), blocks_required::<T>(self.len));
-        if self.len % bits_per_block::<T>() == 0 {
+        if self.len.is_multiple_of(bits_per_block::<T>()) {
             self.vec.push(T::zero());
         }
         let i = self.len;
@@ -1395,7 +1395,7 @@ const fn block_offset<T>(off: usize) -> usize {
 /// Takes as input a number of bits requiring storage; returns an aligned number of blocks needed
 /// to store those bits.
 fn blocks_required<T>(num_bits: usize) -> usize {
-    num_bits / bits_per_block::<T>() + usize::from(num_bits % bits_per_block::<T>() != 0)
+    num_bits / bits_per_block::<T>() + usize::from(!num_bits.is_multiple_of(bits_per_block::<T>()))
 }
 
 #[macro_export]
@@ -1669,8 +1669,8 @@ mod tests {
         assert_eq!(block_offset::<usize>(0), 0);
         assert_eq!(block_offset::<usize>(1), 0);
         assert_eq!(block_offset::<usize>(2), 0);
-        assert_eq!(block_offset::<usize>(size_of::<usize>() * 8 - 1), 0);
-        assert_eq!(block_offset::<usize>(size_of::<usize>() * 8), 1);
+        assert_eq!(block_offset::<usize>(usize::BITS as usize - 1), 0);
+        assert_eq!(block_offset::<usize>(usize::BITS as usize), 1);
     }
 
     #[test]
@@ -1678,34 +1678,34 @@ mod tests {
         assert_eq!(blocks_required::<usize>(0), 0);
         assert_eq!(blocks_required::<usize>(1), 1);
         assert_eq!(blocks_required::<usize>(2), 1);
-        assert_eq!(blocks_required::<usize>(size_of::<usize>() * 8), 1);
-        assert_eq!(blocks_required::<usize>(size_of::<usize>() * 8 + 1), 2);
+        assert_eq!(blocks_required::<usize>(usize::BITS as usize), 1);
+        assert_eq!(blocks_required::<usize>(usize::BITS as usize + 1), 2);
     }
 
     #[test]
     fn test_non_usize_storage() {
         let mut v = Vob::<u8>::new_with_storage_type(0);
-        for _ in 0..size_of::<u8>() * 8 {
+        for _ in 0..u8::BITS as usize {
             v.push(true);
         }
         assert_eq!(v.get(0), Some(true));
-        assert_eq!(v.get(size_of::<u8>() * 8 - 1), Some(true));
-        assert_eq!(v.get(size_of::<u8>() * 8), None);
+        assert_eq!(v.get(u8::BITS as usize - 1), Some(true));
+        assert_eq!(v.get(u8::BITS as usize), None);
         v.push(true);
-        assert_eq!(v.get(size_of::<u8>() * 8), Some(true));
-        v.set(size_of::<u8>() * 8, false);
-        assert_eq!(v.get(size_of::<u8>() * 8), Some(false));
+        assert_eq!(v.get(u8::BITS as usize), Some(true));
+        v.set(u8::BITS as usize, false);
+        assert_eq!(v.get(u8::BITS as usize), Some(false));
         unsafe {
-            assert_eq!(v.get_unchecked(size_of::<u8>() * 8), false);
+            assert!(!v.get_unchecked(u8::BITS as usize));
         }
-        assert_eq!(v.get(size_of::<u8>() * 8 + 1), None);
-        assert_eq!(v.set(size_of::<u8>() * 8, true), true);
-        assert_eq!(v.set(size_of::<u8>() * 8, true), false);
-        assert_eq!(v.get(size_of::<u8>() * 8 - 1), Some(true));
-        assert_eq!(v.get(size_of::<u8>() * 8 - 2), Some(true));
+        assert_eq!(v.get(u8::BITS as usize + 1), None);
+        assert!(v.set(u8::BITS as usize, true));
+        assert!(!v.set(u8::BITS as usize, true));
+        assert_eq!(v.get(u8::BITS as usize - 1), Some(true));
+        assert_eq!(v.get(u8::BITS as usize - 2), Some(true));
         unsafe {
-            assert_eq!(v.get_unchecked(size_of::<u8>() * 8 - 2), true);
-            assert_eq!(v.set_unchecked(size_of::<u8>() * 8 - 2, true), false);
+            assert!(v.get_unchecked(u8::BITS as usize - 2));
+            assert!(!v.set_unchecked(u8::BITS as usize - 2, true));
         }
     }
 
@@ -1713,8 +1713,8 @@ mod tests {
     fn test_capacity() {
         assert_eq!(Vob::new().capacity(), 0);
         assert_eq!(
-            Vob::with_capacity(size_of::<usize>() * 8 + 1).capacity(),
-            size_of::<usize>() * 8 * 2
+            Vob::with_capacity(usize::BITS as usize + 1).capacity(),
+            usize::BITS as usize * 2
         );
     }
 
@@ -1722,12 +1722,12 @@ mod tests {
     fn test_reserve() {
         let mut v = Vob::new();
         v.reserve(10);
-        assert!(v.capacity() >= size_of::<usize>() * 8);
+        assert!(v.capacity() >= usize::BITS as usize);
         v.reserve(10);
-        assert!(v.capacity() >= size_of::<usize>() * 8, "over-reserved");
+        assert!(v.capacity() >= usize::BITS as usize, "over-reserved");
         v.push(true); // make sure there's less space than 64 still available
-        v.reserve(size_of::<usize>() * 8);
-        assert!(v.capacity() >= size_of::<usize>() * 8 * 2);
+        v.reserve(usize::BITS as usize);
+        assert!(v.capacity() >= usize::BITS as usize * 2);
     }
 
     #[test]
@@ -1742,24 +1742,24 @@ mod tests {
     #[test]
     fn test_beyond_a_word() {
         let mut v = Vob::new();
-        for _ in 0..size_of::<usize>() * 8 {
+        for _ in 0..usize::BITS as usize {
             v.push(true);
         }
         assert_eq!(v.get(0), Some(true));
-        assert_eq!(v.get(size_of::<usize>() * 8 - 1), Some(true));
-        assert_eq!(v.get(size_of::<usize>() * 8), None);
+        assert_eq!(v.get(usize::BITS as usize - 1), Some(true));
+        assert_eq!(v.get(usize::BITS as usize), None);
         v.push(true);
-        assert_eq!(v.get(size_of::<usize>() * 8), Some(true));
-        v.set(size_of::<usize>() * 8, false);
-        assert_eq!(v.get(size_of::<usize>() * 8), Some(false));
-        assert_eq!(v.get(size_of::<usize>() * 8 + 1), None);
-        assert_eq!(v.set(size_of::<usize>() * 8, true), true);
-        assert_eq!(v.set(size_of::<usize>() * 8, true), false);
-        assert_eq!(v.get(size_of::<usize>() * 8 - 1), Some(true));
-        assert_eq!(v.get(size_of::<usize>() * 8 - 2), Some(true));
+        assert_eq!(v.get(usize::BITS as usize), Some(true));
+        v.set(usize::BITS as usize, false);
+        assert_eq!(v.get(usize::BITS as usize), Some(false));
+        assert_eq!(v.get(usize::BITS as usize + 1), None);
+        assert!(v.set(usize::BITS as usize, true));
+        assert!(!v.set(usize::BITS as usize, true));
+        assert_eq!(v.get(usize::BITS as usize - 1), Some(true));
+        assert_eq!(v.get(usize::BITS as usize - 2), Some(true));
         unsafe {
-            assert_eq!(v.get_unchecked(size_of::<usize>() * 8 - 2), true);
-            assert_eq!(v.set_unchecked(size_of::<usize>() * 8 - 2, true), false);
+            assert!(v.get_unchecked(usize::BITS as usize - 2));
+            assert!(!v.set_unchecked(usize::BITS as usize - 2, true));
         }
     }
 
@@ -1767,7 +1767,7 @@ mod tests {
     #[should_panic(expected = "Index out of bounds")]
     fn test_set_beyond_a_word() {
         let mut v = vob![true];
-        assert_eq!(v.set(0, false), true);
+        assert!(v.set(0, false));
         v.set(1, true);
     }
 
@@ -1839,15 +1839,15 @@ mod tests {
 
     #[test]
     fn test_is_empty() {
-        assert_eq!(vob![].is_empty(), true);
-        assert_eq!(vob![true].is_empty(), false);
+        assert!(vob![].is_empty());
+        assert!(!vob![true].is_empty());
     }
 
     #[test]
     fn test_resize() {
         let mut v = Vob::new();
         v.resize(1, true);
-        assert_eq!(v[0], true);
+        assert!(v[0]);
 
         let mut v = Vob::new();
         v.push(false);
@@ -1905,8 +1905,8 @@ mod tests {
     #[test]
     fn test_index() {
         let v1 = vob![false, true];
-        assert_eq!(v1[0], false);
-        assert_eq!(v1[1], true);
+        assert!(!v1[0]);
+        assert!(v1[1]);
     }
 
     #[test]
@@ -2101,12 +2101,12 @@ mod tests {
     fn test_split_off() {
         for len_a in 0..128 {
             for len_b in 0..128 {
-                let a = random_vob(len_a as usize);
-                let b = random_vob(len_b as usize);
+                let a = random_vob(len_a);
+                let b = random_vob(len_b);
                 let mut joined = a.clone();
                 joined.extend_from_vob(&b);
                 assert_eq!(joined.len(), len_a + len_b);
-                let b_ = joined.split_off(len_a as usize);
+                let b_ = joined.split_off(len_a);
                 assert_eq!(a, joined, "lower part for {}, {}", len_a, len_b);
                 assert_eq!(b, b_, "upper part for {}, {}", len_a, len_b);
             }
