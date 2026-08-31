@@ -1,3 +1,11 @@
+# vob 4.0.1 (2026-08-31)
+
+* Remove inaccurate `size_hint`s from `iter_set_bits` and `iter_unset_bits`.
+  These returned the size of the `Vob` rather than the number of set/unset
+  bits. When used in idioms such as `vob.iter_set_bits().collect()` this could
+  cause significant overallocation.
+
+
 # vob 4.0.0 (2026-07-16)
 
 * Move from (the unmaintained) `bincode` to `wincode`. The associated feature
