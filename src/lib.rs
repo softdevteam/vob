@@ -1202,10 +1202,6 @@ impl<T: Debug + PrimInt> Iterator for IterSetBits<'_, T> {
         None
     }
 
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.range.size_hint()
-    }
-
     fn count(self) -> usize {
         self.vob.count_set_bits(self.range)
     }
@@ -1284,10 +1280,6 @@ impl<T: Debug + PrimInt> Iterator for IterUnsetBits<'_, T> {
             }
         }
         None
-    }
-
-    fn size_hint(&self) -> (usize, Option<usize>) {
-        self.range.size_hint()
     }
 
     fn count(self) -> usize {
